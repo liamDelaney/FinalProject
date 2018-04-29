@@ -34,7 +34,22 @@
 </div>
 <script>
 
-
+document.addEventListener("keydown", function(e){
+	console.log(e);
+	var dis = 10;
+	
+	if(e.key == "ArrowRight"){
+		
+		svg.interrupt();
+		//svg.call(zoom.translateBy,100,0);
+		svg.transition().duration(200).call(zoom.translateBy, -dis, 0);
+	}else if(e.key == "ArrowLeft"){
+		
+		svg.interrupt();
+		//svg.call(zoom.translateBy,100,0);
+		svg.transition().duration(200).call(zoom.translateBy, dis, 0);
+	}
+});
 var x,y,gX, gY, xAxis, yAxis; 
 var idList=1
 var color = d3.scaleOrdinal(d3.schemeCategory10);
@@ -46,12 +61,14 @@ var settings = {
         type:"line"
     }
 };
+var svg;
+var zoom;
 var limits = {};
 d3.csv("data/market-price.csv",function(data){
 
     $.extend(settings,JSON.parse("{\r\n    \"detail\":{\r\n        \"type\":\"bar\"\r\n    }\r\n}"));
     mainData = data;
-    var svg = d3.select("svg");
+     svg = d3.select("svg");
 	console.log(data);
     d3.select("#area")
         .insert("div","svg").html("asdf"+"<BR>"+"asdf2"
@@ -114,7 +131,7 @@ d3.csv("data/market-price.csv",function(data){
                 .x(function(d) { return  x(new Date(d.date)); })
                 .y(function(d) { return  y(+d.price); });
 
-    var zoom = d3.zoom().on("zoom",zoomed);
+    zoom = d3.zoom().on("zoom",zoomed);
   
     xAxis = d3.axisBottom(x);
     yAxis = d3.axisLeft(y);
