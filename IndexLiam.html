@@ -1,0 +1,261 @@
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<style>
+   path.line {
+        fill: none;
+        stroke: steelblue;
+        stroke-width: 1.5px;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+    }
+
+
+    .bar rect {
+    fill: steelblue;
+    }
+
+    .bar text {
+    fill: #fff;
+    font: 10px sans-serif;
+    }
+    line.goal {
+        stroke:green;
+        stroke-width:1px;
+    }
+    line {
+        stroke-width:1px;
+    }
+
+
+</style>
+
+<div id=area>
+<svg width="960" height="500"></svg><P>
+</div>
+<script>
+
+document.addEventListener("keydown", function(e){
+	console.log(e);
+	var dis = 10;
+	
+	if(e.key == "ArrowRight"){
+		
+		svg.interrupt();
+		//svg.call(zoom.translateBy,100,0);
+		svg.transition().duration(200).call(zoom.translateBy, -dis, 0);
+	}else if(e.key == "ArrowLeft"){
+		
+		svg.interrupt();
+		//svg.call(zoom.translateBy,100,0);
+		svg.transition().duration(200).call(zoom.translateBy, dis, 0);
+	}
+});
+var x,y,gX, gY, xAxis, yAxis; 
+var idList=1
+var color = d3.scaleOrdinal(d3.schemeCategory10);
+var mainData = null;
+var eventData = null;
+var line;
+var settings = {
+    targets:[],
+    detail:{
+        type:"line"
+    }
+};
+var svg;
+var zoom;
+var limits = {};
+d3.csv("data/market-price.csv",function(data){
+
+    $.extend(settings,JSON.parse("{\r\n    \"detail\":{\r\n        \"type\":\"bar\"\r\n    }\r\n}"));
+    mainData = data;
+     svg = d3.select("svg");
+	console.log(data);
+    d3.select("#area")
+        .insert("div","svg").html("asdf"+"<BR>"+"asdf2"
+        +"<BR>"+"asdf");
+
+     limits = {maxY:null, minY:null, maxX:null, minX:null};
+    var padding = {top:20,bottom:150,left:100,right:20};
+
+    var width = +svg.attr("width");
+    var height = +svg.attr("height");
+
+    var canvasHeight = height-padding.top-padding.bottom;
+    var canvasWidth  = width-padding.left-padding.right;
+
+        var eMaxY = d3.max(data,function(d){return +d.price;});
+        var eMinY = d3.min(data,function(d){return +d.price;});
+        var eMaxX = d3.max(data,function(d){return new Date(d.date);});
+        var eMinX = d3.min(data,function(d){return new Date(d.date);});
+		
+        if(limits.maxX == null){ limits.maxX = eMaxX;} 
+        else { if(eMaxX > limits.maxX){ limits.maxX = eMaxX;}}
+
+        if(limits.minX == null){ limits.minX = eMinX;} 
+        else { if(eMinX < limits.minX){ limits.minX = eMinX;}}
+
+        if(limits.maxY == null){limits.maxY = eMaxY;} 
+        else { if(eMaxY > limits.maxY){limits.maxY = eMaxY;}}
+
+        if(limits.minY == null){limits.minY = eMinY;}
+        else { if(eMinY < limits.minY){limits.minY = eMinY;}}
+
+    settings.targets.forEach(function(d){
+	
+		console.log(d);
+        if(limits.maxY < d.value){
+            limits.maxY = d.value;
+        } 
+        if(limits.minY > d.value){
+            limits.minY = d.value;
+        }
+    });
+
+
+    var canvas = svg.append("g")
+                    .attr("id","canvas")
+                    .attr("width",canvasWidth)
+                    .attr("height",canvasHeight)
+                    .attr("transform","translate("+padding.left+","+padding.top+")")
+                    ;
+
+
+    x = d3.scaleTime()
+            .domain([limits.minX,limits.maxX])
+            .range([0,+canvas.attr("width")]);
+    y = d3.scaleLinear()
+            .domain([limits.maxY*1.1,limits.minY-(limits.minY*0.1)])
+            .range([0,+canvas.attr("height")]);
+    
+    line = d3.line()
+                .x(function(d) { return  x(new Date(d.date)); })
+                .y(function(d) { return  y(+d.price); });
+
+    zoom = d3.zoom().on("zoom",zoomed);
+  
+    xAxis = d3.axisBottom(x);
+    yAxis = d3.axisLeft(y);
+
+    canvas.selectAll(".targets")
+          .data(settings.targets)
+          .enter()
+            .append("line")
+            .classed("targets",true)
+            .style("stroke",function(d){return d.color;})
+            .style("stroke-width",1)
+            .attr("x1",x(limits.minX))
+            .attr("x2",x(limits.maxX))
+            .attr("y1",function(d){return y(+d.value);})
+            .attr("y2",function(d){return y(+d.value);});
+
+    var clip = canvas.append("clipPath")
+                    .attr("id","clip")
+                    .append("rect")
+                    .attr("width",canvasWidth)
+                    .attr("height",canvasHeight);
+    
+    gX = canvas.append("g")
+                .attr("transform","translate(0,"+(+canvas.attr("height"))+")")
+                .attr("class","axis axis--x")
+                .call(xAxis);
+
+    gY = canvas.append("g").attr("class","axis axis--y").call(yAxis);
+    
+    d3.selectAll(".axis--y > g.tick > line").attr("x2",canvasWidth).style("stroke","lightgrey");
+
+    if(settings.detail.type == "line"){
+        var lines = canvas.selectAll("path.line")
+                                .data(data)
+                                .enter()
+                                .append("path")
+                                .attr("clip-path", "url(#clip)")
+                                .classed("line",true)
+                                .style("stroke",function(d){ return color(1)})
+                                .attr("d",function(d){
+                                    return line(d);})
+                                ;  
+    } else if(settings.detail.type == "bar"){
+        barWidth = (x(new Date("2016-01-03")) - x(new Date("2016-01-01")));
+        var barLines = canvas.selectAll("rect.bar")
+                            .data(data)    
+                            .enter()
+                            .append("rect")
+                            .attr("class","bar")
+                            .attr("clip-path", "url(#clip)")
+                            .attr("x",function(d){
+								console.log(d);
+								return x(new Date(d.date))-barWidth*0.5;})
+                            .attr("width",barWidth)
+                            .attr("height",function(d){return canvasHeight-y(d.price);})
+                            .attr("y",function(d){return y(d.price);})
+                            .style("fill","steelblue")
+                            .style("stroke","blue")
+                            .style("stroke-width","1px");
+    }
+    
+    d3.csv("data/event-timeline.csv",function(data){
+        eventData = data;
+        var dots = canvas.append("g");
+            //dots.attr("clip-path", "url(#clip)");
+            dots.selectAll("dot")
+                .data(data)
+                .enter().append("circle")
+                .attr('class', 'dot')
+                .attr("r", 5)
+                .style("opacity", .5)
+                .attr("stroke", "black")
+                .attr("stroke-width", "1.1px")
+                .style("fill", function (d) {
+                    if (d.Type == "Milestone") {
+                        return 'Blue';
+                    }
+                    else if (d.Type == "Crash") {
+                        return 'Red';
+                    }
+                    else if (d.Type == "Boom") {
+                        return 'Green';
+                    }
+                })
+                .attr("cx",function(d){
+				    return x(new Date(d.Date))})
+                .attr("cy",375);
+                
+    });
+   
+
+    canvas.append("g")
+          .attr("transform","translate("+(-40)+","+
+          (+canvas.attr("height"))/2
+          +") rotate(270)")
+          .append("text")
+          .attr("text-anchor","middle")
+          .text("price");
+
+    svg.call(zoom);
+});
+       
+function zoomed() {
+    gX.call(xAxis.scale(d3.event.transform.rescaleX(x)));
+    var new_x = d3.event.transform.rescaleX(x);
+
+    if(settings.detail.type == "line"){
+        line.x(function(d) { return  new_x(new Date(d.date)); })
+        d3.select("#canvas").selectAll("path.line")
+                        .data(mainData)
+                        .attr("d",function(d){
+                            return line(d);
+                        }); 
+    } else if(settings.detail.type == "bar"){
+        barWidth = new_x(new Date("2016-01-02")) - new_x(new Date("2016-01-01"));
+        d3.select("#canvas").selectAll("rect.bar")
+                            .data(mainData)    
+                            .attr("x",function(d){return new_x(new Date(d.date))-barWidth*0.5;})
+                            .attr("width",barWidth);
+    }
+    
+    d3.select("#canvas").selectAll(".dot")
+        .data(eventData)
+        .attr("cx",function(d){return new_x(new Date(d.Date))});
+}
+</script>
