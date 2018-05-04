@@ -8,12 +8,21 @@ const margin = {
 
 let width;
 let height;
+let canvasHeight;
+let canvasWidth;
 let xScale = null;
 let yScale = null;
 let xAxis;
 let yAxis;
 let svg;
 let zoom;
+let canvas = null;
+const limits = {
+  maxY: null,
+  minY: null,
+  maxX: null,
+  minX: null,
+};
 
 const settings = {
   targets: [],
@@ -55,15 +64,50 @@ const bindArrowKeys = () => {
 
 const filterData = () => globalData.filter(() => true);
 
-const zoomed = (gX, canvas, dataFiltered) => {
+const zoomed = (gX,gY, dataFiltered) => {
   gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
   const newX = d3.event.transform.rescaleX(xScale);
-
+  //const newY = d3.event.transform.rescaleY(yScale);
+  gY.call(yAxis.scale(yScale));
+  RescaleY(dataFiltered,newX);
   createLine.x(d => newX(new Date(d.date)));
+  createLine.y(d => yScale(d.price));
   canvas.selectAll('path.line')
     .datum(dataFiltered)
     .attr('d', createLine)
     .attr('clip-path', 'url(#clip)');
+	RedrawY();
+};
+const RescaleY = (dataFiltered,currentX)=>{
+	//console.log(new Date(currentX.invert(0)));
+	//console.log(new Date(currentX.invert(canvasWidth)));
+	let minX = currentX.invert(0);
+	let maxX = currentX.invert(canvasWidth);
+	
+	
+  const eMaxY = d3.max(dataFiltered, (d) => {
+  
+	if(d.date >= limits.minX && d.date <= limits.maxX && 
+		d.date >= minX && d.date <= maxX ){
+		return d.price;
+	}
+	return 1;
+  });
+  const eMinY = d3.min(dataFiltered, (d) => {
+	return 0;
+  });
+  limits.maxY = eMaxY;
+  limits.minY = eMinY;
+
+
+  yScale = d3.scaleLinear()
+    .domain([limits.maxY * 1.1, limits.minY - (limits.minY * 0.1)])
+    .range([0, +canvas.attr('height')]);
+};
+const RedrawY = ()=>{
+  d3.selectAll('.axis--y > g.tick > line')
+    .attr('x2', canvasWidth)
+    .style('stroke', 'lightgrey');
 };
 
 const initiateCanvas = () => {
@@ -76,24 +120,15 @@ const initiateCanvas = () => {
   height = $('#chart-container>svg').height() - margin.top - margin.bottom;
 
 
-  const limits = {
-    maxY: null,
-    minY: null,
-    maxX: null,
-    minX: null,
-  };
+   canvasHeight = height - margin.top - margin.bottom;
+   canvasWidth = width - margin.left - margin.right;
 
-  const canvasHeight = height - margin.top - margin.bottom;
-  const canvasWidth = width - margin.left - margin.right;
-
-  const canvas = svg.append('g')
+   canvas = svg.append('g')
     .attr('id', 'canvas')
     .attr('width', canvasWidth)
     .attr('height', canvasHeight)
     .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-  const eMaxY = d3.max(dataFiltered, d => d.price);
-  const eMinY = d3.min(dataFiltered, d => d.price);
   const eMaxX = d3.max(dataFiltered, d => d.date);
   const eMinX = d3.min(dataFiltered, d => d.date);
 
@@ -109,34 +144,11 @@ const initiateCanvas = () => {
     limits.minX = eMinX;
   }
 
-  if (limits.maxY == null) {
-    limits.maxY = eMaxY;
-  } else if (eMaxY > limits.maxY) {
-    limits.maxY = eMaxY;
-  }
-
-  if (limits.minY == null) {
-    limits.minY = eMinY;
-  } else if (eMinY < limits.minY) {
-    limits.minY = eMinY;
-  }
-
-  settings.targets.forEach((d) => {
-    console.log(d);
-    if (limits.maxY < d.value) {
-      limits.maxY = d.value;
-    }
-    if (limits.minY > d.value) {
-      limits.minY = d.value;
-    }
-  });
-
   xScale = d3.scaleTime()
     .domain([limits.minX, limits.maxX])
     .range([0, +canvas.attr('width')]);
-  yScale = d3.scaleLinear()
-    .domain([limits.maxY * 1.1, limits.minY - (limits.minY * 0.1)])
-    .range([0, +canvas.attr('height')]);
+	
+  RescaleY(dataFiltered,xScale);
   createLine = d3.line().x(d => xScale(d.date)).y(d => yScale(d.price));
 
   xAxis = d3.axisBottom(xScale);
@@ -165,11 +177,8 @@ const initiateCanvas = () => {
     .attr('class', 'axis axis--x')
     .call(xAxis);
 
-  canvas.append('g').attr('class', 'axis axis--y').call(yAxis);
+  const gY = canvas.append('g').attr('class', 'axis axis--y').call(yAxis);
 
-  d3.selectAll('.axis--y > g.tick > line')
-    .attr('x2', canvasWidth)
-    .style('stroke', 'lightgrey');
 
   canvas
     .append('path')
@@ -191,9 +200,9 @@ const initiateCanvas = () => {
     .attr('text-anchor', 'middle')
     .text('price');
 
-  zoom = d3.zoom().on('zoom', () => zoomed(gX, canvas, dataFiltered));
-
+  zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, dataFiltered));
   svg.call(zoom);
+  RedrawY();
 };
 
 $(document).ready(() => {
