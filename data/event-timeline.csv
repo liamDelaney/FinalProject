@@ -1,12 +1,21 @@
 Date,Type,Link,Description
 1/3/2009,Milestone,https://thenextweb.com/hardfork/2018/01/03/bitcoin-block-zero-first-blockchain/,The very first Bitcoin block was mined by creator Satoshi Nakamoto for 50 bitcoins.
-4/1/2017,Milestone,https://bravenewcoin.com/news/bitcoin-regulation-overhaul-in-japan/,The Japanese government officially recognizes Bitcoin as a legal method of payment.
 5/22/2010,Milestone,https://munchies.vice.com/en_us/article/j5e4pg/remembering-that-time-a-dude-unknowingly-spent-dollar20-million-on-two-pizzas,"First purchase was made with Bitcoin.  The purchase was for two pizzas priced as around $25 total.  At the time, those pizzas cost 10,000 bitcoins."
-4/11/2013,Crash,http://money.cnn.com/2013/04/12/investing/bitcoin-bubble/index.html,"Dubbed the ""April 2013 Meltdown"".  Bitcoin's price fell from $233 to $67 overnight."
+7/1/2010,Milestone,https://www.crunchbase.com/organization/mt-gox#section-overview,Bitcoin currency exchange market Mt. Gox is established.
+11/6/2010,Milestone,https://web.archive.org/web/20110204025853/http://silkroad420.wordpress.com/,"The ""Silk Road"" drug marketplace is established on the darknet.  Referred to as the eBay of illegal drugs, the site allowed users to anonymous purchase drugs through Bitcoin."
+6/9/2011,Boom,http://gawker.com/the-underground-website-where-you-can-buy-any-drug-imag-30818160,"Bitcoin's price spikes in response to a Gawker piece exposes the ""Silk Road"" drug marketplace going viral."
+6/11/2011,Disaster,https://www.forbes.com/sites/timworstall/2011/06/17/bitcoin-the-first-500000-theft/#47b1462929b3,"Largest Bitcoin theft ever report.  250,000 BTC was stolen from a user's Bitcoin wallet, valued at roughly $500,000."
+6/12/2011,Crash,https://bitcoinmagazine.com/articles/anniversary-of-the-great-bubble-of-2011-1339139269/,"Referred to as ""The Great Bubble of 2011"", this day market the great percentage price decrese to date, from $31.91 to $10.  Bitcoin's value wouldn't return to this peak for another two years."
+6/14/2011,Milestone,https://twitter.com/wikileaks/status/80774521350668288?lang=en,"Wikileaks begins accepting Bitcoin.  Julian Assange, the founder of Wikileaks, would later claim a 50,000% return through investing in Bitcoin so early in it's lifespan."
+6/19/2011,Crash,https://arstechnica.com/tech-policy/2011/06/bitcoin-price-plummets-on-compromised-exchange/,"Bitcoin's price crashes after it's most popular exchange, Mt. Gox was hacked."
+5/9/2012,Disaster,https://www.wired.com/images_blogs/threatlevel/2012/05/Bitcoin-FBI.pdf,"FBI report on Bitcoin leaked.  Titled ""Bitcoin Virtual Currency: Unique Features Present Distinct Challenges for Deterring Illicit Activity"", the report drew attention to the potential for Bitcoin to be utilized for illegal transaction regarding weapons and narcotics. "
+3/11/2013,Crash,https://arstechnica.com/information-technology/2013/03/major-glitch-in-bitcoin-network-sparks-sell-off-price-temporarily-falls-23/,Glitch in Bitcoin software causes brief crash in price.
 3/28/2013,Boom,http://money.cnn.com/2013/03/28/investing/bitcoin-cyprus/,Bitcoin price surges in response to bailout of Crypus' banks.
-12/17/2017,Boom,http://fortune.com/2017/12/17/bitcoin-record-high-short-of-20000/,Bitcoin reaches it's highest price as of today.
+4/11/2013,Crash,http://money.cnn.com/2013/04/12/investing/bitcoin-bubble/index.html,"Dubbed the ""April 2013 Meltdown"".  Bitcoin's price fell from $233 to $67 overnight."
+8/12/2013,Disaster,http://onbitcoin.com/2013/08/13/22-bitcoin-companies-issued-subpoena-by-new-york-department-of-financial-services/,22 bitcoin companies are issued a subpoena by The New York Department of Financial Services.  The aim of the subpoenas were to investigate concerns of Bitcoin being utilized for illegal activities to determine if regulatory action was necessary.
 4/27/2016,Milestone,https://bravenewcoin.com/news/steam-accepts-bitcoin-with-bitpay/,Digitil video game distribution platform Steam announces that it will accept Bitcoin for purchases.
 3/2/2017,Milestone,https://techcrunch.com/2017/03/02/one-bitcoin-is-now-worth-more-than-one-ounce-of-gold/,Bitcoin worth as much as an ounce of gold
-6/9/2011,Boom,http://gawker.com/the-underground-website-where-you-can-buy-any-drug-imag-30818160,"Bitcoin's price spikes in response to a Gawker piece exposes the ""Silk Road"" drug marketplace going viral."
-6/19/2011,Crash,https://arstechnica.com/tech-policy/2011/06/bitcoin-price-plummets-on-compromised-exchange/,"Bitcoin's price crashes after it's most popular exchange, Mt. Gox was hacked."
+4/1/2017,Milestone,https://bravenewcoin.com/news/bitcoin-regulation-overhaul-in-japan/,The Japanese government officially recognizes Bitcoin as a legal method of payment.
+12/17/2017,Boom,http://fortune.com/2017/12/17/bitcoin-record-high-short-of-20000/,Bitcoin reaches it's highest price as of today.
 12/22/2017,Crash,http://money.cnn.com/2017/12/22/investing/bitcoin-plunges-below-14k/index.html,Bitcoin loses one third of it's value in a single day.
+10/2/2013,Disaster,https://www.usatoday.com/story/news/nation/2013/10/21/fbi-cracks-silk-road/2984921/,"The FBI shuts down the Silk Road.  A second version of the site would emerge a month later, only to be sebsquently shut down by the FBI again the following year."
