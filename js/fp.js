@@ -65,18 +65,33 @@ const bindArrowKeys = () => {
 const filterData = () => globalData.filter(() => true);
 
 const zoomed = (gX,gY, dataFiltered) => {
-  gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
-  const newX = d3.event.transform.rescaleX(xScale);
-  //const newY = d3.event.transform.rescaleY(yScale);
-  gY.call(yAxis.scale(yScale));
-  RescaleY(dataFiltered,newX);
-  createLine.x(d => newX(new Date(d.date)));
-  createLine.y(d => yScale(d.price));
-  canvas.selectAll('path.line')
-    .datum(dataFiltered)
-    .attr('d', createLine)
-    .attr('clip-path', 'url(#clip)');
-	RedrawY();
+	let transform = d3.event.transform;
+	tx = Math.min(0, Math.max(transform.x, width *1 - width * transform.k+width*(transform.k-1)/7)),
+	//ty = Math.min(0, Math.max(transform.x, height - height * transform.k));
+	transform.x = tx;
+	zoom.transform.x = tx;
+	//transform.y = ty;
+	/*	// then, update the zoom behavior's internal translation, so that
+		// it knows how to properly manipulate it on the next movement
+		zoom.translate([tx, ty]);
+		// and finally, update the <g> element's transform attribute with the
+		// correct translation and scale (in reverse order)
+		g.attr("transform", [
+		  "translate(" + [tx, ty] + ")",
+		  "scale(" + e.scale + ")"
+	].join(" "));*/
+	gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
+	const newX = d3.event.transform.rescaleX(xScale);
+	//const newY = d3.event.transform.rescaleY(yScale);
+	gY.call(yAxis.scale(yScale));
+	RescaleY(dataFiltered,newX);
+	createLine.x(d => newX(new Date(d.date)));
+	createLine.y(d => yScale(d.price));
+	canvas.selectAll('path.line')
+	  .datum(dataFiltered)
+	  .attr('d', createLine)
+	  .attr('clip-path', 'url(#clip)');
+	  RedrawY();
 };
 const RescaleY = (dataFiltered,currentX)=>{
 	//console.log(new Date(currentX.invert(0)));
@@ -199,8 +214,10 @@ const initiateCanvas = () => {
     ).append('text')
     .attr('text-anchor', 'middle')
     .text('price');
-
-  zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, dataFiltered));
+  //console.log(xScale(limits.maxX));
+  zoom = d3.zoom().scaleExtent([1, 8]);
+	
+  zoom.on('zoom', () => zoomed(gX, gY, dataFiltered));
   svg.call(zoom);
   RedrawY();
 };
