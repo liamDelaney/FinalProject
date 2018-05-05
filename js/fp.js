@@ -13,6 +13,7 @@ let canvasWidth;
 let xScale = null;
 let yScale = null;
 let xAxis;
+let currentX;
 let yAxis;
 let svg;
 let zoom;
@@ -81,11 +82,11 @@ const zoomed = (gX,gY, dataFiltered) => {
 		  "scale(" + e.scale + ")"
 	].join(" "));*/
 	gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
-	const newX = d3.event.transform.rescaleX(xScale);
+	 currentX = d3.event.transform.rescaleX(xScale);
 	//const newY = d3.event.transform.rescaleY(yScale);
 	gY.call(yAxis.scale(yScale));
-	RescaleY(dataFiltered,newX);
-	createLine.x(d => newX(new Date(d.date)));
+	RescaleY(dataFiltered,currentX);
+	createLine.x(d => currentX(new Date(d.date)));
 	createLine.y(d => yScale(d.price));
 	canvas.selectAll('path.line')
 	  .datum(dataFiltered)
@@ -124,7 +125,16 @@ const RedrawY = ()=>{
     .attr('x2', canvasWidth)
     .style('stroke', 'lightgrey');
 };
-
+const GetDataAtDate= (date)=>{
+	var d = {};
+	for(var i = 0 ; i < globalData.length; i++){
+		if(date < globalData[i].date){
+			break;
+		}
+		d = globalData[i];
+	}
+	return d;
+};
 const initiateCanvas = () => {
   svg = d3.select('#chart-container>svg');
   svg.selectAll('*').remove();
@@ -162,7 +172,7 @@ const initiateCanvas = () => {
   xScale = d3.scaleTime()
     .domain([limits.minX, limits.maxX])
     .range([0, +canvas.attr('width')]);
-	
+	currentX = xScale;
   RescaleY(dataFiltered,xScale);
   createLine = d3.line().x(d => xScale(d.date)).y(d => yScale(d.price));
 
@@ -215,13 +225,51 @@ const initiateCanvas = () => {
     .attr('text-anchor', 'middle')
     .text('price');
   //console.log(xScale(limits.maxX));
-  zoom = d3.zoom().scaleExtent([1, 8]);
+   /* svg.append('rect')
+      .attr('class', 'overlay')
+      .attr('width', width)
+      .attr('height', height)
+      .on('mouseover', () => focus.style('display', null))
+      .on('mouseout', () => focus.style('display', 'none'))
+   .on('mousemove', mousemove);*/
+  zoom = d3.zoom().scaleExtent([1, 9]);
 	
   zoom.on('zoom', () => zoomed(gX, gY, dataFiltered));
+  
+  svg.on("mousemove", mousemove);
   svg.call(zoom);
   RedrawY();
 };
-
+let mouselabel = null;
+let mouseline = null;
+const mousemove= (e)=>{
+	let mousex = d3.mouse(svg.node())[0];
+	let x0 = currentX.invert(mousex- margin.left);
+	//console.log([x0,currentX.invert(0)]);
+	if(mouseline == null){
+		mouselabel = svg.append('text');
+		mouseline = svg.append('rect')
+			.attr('width','1')
+			.attr('height',height)
+			
+		/*svg.on("mouseout", ()=>{
+			mouseline.style('fill','rgba(0,0,0,0.0)');
+		});*/
+		
+	}
+	let d = GetDataAtDate(x0);
+	let str = "$"+d.price.toFixed(2);
+	mouselabel.text(str);
+	var xpos = currentX(d.date)+margin.left;
+	
+	if(xpos < margin.left || xpos>width-margin.right){
+		mouseline.style('fill','rgba(0,0,0,0.0)');
+	}else{
+		mouseline.style('fill','rgba(0,0,0,0.2)');
+	}
+	mouseline.attr('transform','translate('+ xpos+','+margin.top+')');
+	mouselabel.attr('transform','translate('+ xpos+','+(margin.top+40)+')');
+};
 $(document).ready(() => {
   d3.csv('data/market-price.csv', (error, data) => {
     globalData = data.map((d) => {
