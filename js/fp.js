@@ -65,25 +65,7 @@ const bindArrowKeys = () => {
 
 const filterData = () => globalData.filter(() => true);
 
-<<<<<<< HEAD
 const zoomed = (gX,gY, dataFiltered, eventData) => {
-  gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
-  const newX = d3.event.transform.rescaleX(xScale);
-  //const newY = d3.event.transform.rescaleY(yScale);
-  gY.call(yAxis.scale(yScale));
-  RescaleY(dataFiltered,newX);
-  createLine.x(d => newX(new Date(d.date)));
-  createLine.y(d => yScale(d.price));
-  canvas.selectAll('path.line')
-    .datum(dataFiltered)
-    .attr('d', createLine)
-    .attr('clip-path', 'url(#clip)');
-	RedrawY();
-  d3.select("#canvas").selectAll(".dot")
-    .data(eventData)
-    .attr("cx",function(d){return newX(new Date(d.Date))});
-=======
-const zoomed = (gX,gY, dataFiltered) => {
 	let transform = d3.event.transform;
 	tx = Math.min(0, Math.max(transform.x, width *1 - width * transform.k+width*(transform.k-1)/7)),
 	//ty = Math.min(0, Math.max(transform.x, height - height * transform.k));
@@ -111,8 +93,11 @@ const zoomed = (gX,gY, dataFiltered) => {
 	  .attr('d', createLine)
 	  .attr('clip-path', 'url(#clip)');
 	  RedrawY();
->>>>>>> e1426373ae851efa169f0f8824ed7ebd15311906
+    canvas.selectAll('.dot')
+        .data(eventData)
+        .attr("cx",function(d){return currentX(new Date(d.Date))});
 };
+
 const RescaleY = (dataFiltered,currentX)=>{
 	//console.log(new Date(currentX.invert(0)));
 	//console.log(new Date(currentX.invert(canvasWidth)));
@@ -256,7 +241,7 @@ const initiateCanvas = () => {
         .attr("stroke-width", "1px")
         .attr("cx",function(d){
             return xScale(new Date(d.Date))})
-        .attr("cy",canvasHeight * 1.05)
+        .attr("cy",canvasHeight * 1.06)
         .attr("cursor", "pointer")
         .attr('clip-path', 'url(#clip)')
         .on("mouseover", function (d) {
@@ -277,17 +262,17 @@ const initiateCanvas = () => {
     
     canvas.append("line")
         .attr("x1", 0)
-        .attr("y1", canvasHeight * 1.05 - 5)
+        .attr("y1", canvasHeight * 1.06 - 5)
         .attr("x2", canvasWidth)
-        .attr("y2", canvasHeight * 1.05 - 5)
+        .attr("y2", canvasHeight * 1.06 - 5)
         .style("opacity", 1)
         .style("stroke", "grey");
     
     canvas.append("line")
         .attr("x1", 0)
-        .attr("y1", canvasHeight * 1.05 + 5)
+        .attr("y1", canvasHeight * 1.06 + 5)
         .attr("x2", canvasWidth)
-        .attr("y2", canvasHeight * 1.05 + 5)
+        .attr("y2", canvasHeight * 1.06 + 5)
         .style("opacity", 1)
         .style("stroke", "grey");
     
@@ -299,10 +284,7 @@ const initiateCanvas = () => {
     ).append('text')
     .attr('text-anchor', 'middle')
     .text('price');
-<<<<<<< HEAD
-
   zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, dataFiltered, eventData));
-=======
   //console.log(xScale(limits.maxX));
    /* svg.append('rect')
       .attr('class', 'overlay')
@@ -313,10 +295,9 @@ const initiateCanvas = () => {
    .on('mousemove', mousemove);*/
   zoom = d3.zoom().scaleExtent([1, 9]);
 	
-  zoom.on('zoom', () => zoomed(gX, gY, dataFiltered));
+  zoom.on('zoom', () => zoomed(gX, gY, dataFiltered, eventData));
   
   svg.on("mousemove", mousemove);
->>>>>>> e1426373ae851efa169f0f8824ed7ebd15311906
   svg.call(zoom);
   RedrawY();
 };
@@ -365,7 +346,7 @@ $(document).ready(() => {
       return newe;
     
     });
-    
+    console.log(eventData);
     
     initiateCanvas();
 
