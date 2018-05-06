@@ -65,6 +65,7 @@ const bindArrowKeys = () => {
 
 const filterData = () => globalData.filter(() => true);
 
+<<<<<<< HEAD
 const zoomed = (gX,gY, dataFiltered, eventData) => {
   gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
   const newX = d3.event.transform.rescaleX(xScale);
@@ -81,6 +82,36 @@ const zoomed = (gX,gY, dataFiltered, eventData) => {
   d3.select("#canvas").selectAll(".dot")
     .data(eventData)
     .attr("cx",function(d){return newX(new Date(d.Date))});
+=======
+const zoomed = (gX,gY, dataFiltered) => {
+	let transform = d3.event.transform;
+	tx = Math.min(0, Math.max(transform.x, width *1 - width * transform.k+width*(transform.k-1)/7)),
+	//ty = Math.min(0, Math.max(transform.x, height - height * transform.k));
+	transform.x = tx;
+	zoom.transform.x = tx;
+	//transform.y = ty;
+	/*	// then, update the zoom behavior's internal translation, so that
+		// it knows how to properly manipulate it on the next movement
+		zoom.translate([tx, ty]);
+		// and finally, update the <g> element's transform attribute with the
+		// correct translation and scale (in reverse order)
+		g.attr("transform", [
+		  "translate(" + [tx, ty] + ")",
+		  "scale(" + e.scale + ")"
+	].join(" "));*/
+	gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
+	 currentX = d3.event.transform.rescaleX(xScale);
+	//const newY = d3.event.transform.rescaleY(yScale);
+	gY.call(yAxis.scale(yScale));
+	RescaleY(dataFiltered,currentX);
+	createLine.x(d => currentX(new Date(d.date)));
+	createLine.y(d => yScale(d.price));
+	canvas.selectAll('path.line')
+	  .datum(dataFiltered)
+	  .attr('d', createLine)
+	  .attr('clip-path', 'url(#clip)');
+	  RedrawY();
+>>>>>>> e1426373ae851efa169f0f8824ed7ebd15311906
 };
 const RescaleY = (dataFiltered,currentX)=>{
 	//console.log(new Date(currentX.invert(0)));
@@ -113,7 +144,16 @@ const RedrawY = ()=>{
     .attr('x2', canvasWidth)
     .style('stroke', 'lightgrey');
 };
-
+const GetDataAtDate= (date)=>{
+	var d = {};
+	for(var i = 0 ; i < globalData.length; i++){
+		if(date < globalData[i].date){
+			break;
+		}
+		d = globalData[i];
+	}
+	return d;
+};
 const initiateCanvas = () => {
   svg = d3.select('#chart-container>svg');
   svg.selectAll('*').remove();
@@ -151,7 +191,7 @@ const initiateCanvas = () => {
   xScale = d3.scaleTime()
     .domain([limits.minX, limits.maxX])
     .range([0, +canvas.attr('width')]);
-	
+	currentX = xScale;
   RescaleY(dataFiltered,xScale);
   createLine = d3.line().x(d => xScale(d.date)).y(d => yScale(d.price));
 
@@ -259,12 +299,57 @@ const initiateCanvas = () => {
     ).append('text')
     .attr('text-anchor', 'middle')
     .text('price');
+<<<<<<< HEAD
 
   zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, dataFiltered, eventData));
+=======
+  //console.log(xScale(limits.maxX));
+   /* svg.append('rect')
+      .attr('class', 'overlay')
+      .attr('width', width)
+      .attr('height', height)
+      .on('mouseover', () => focus.style('display', null))
+      .on('mouseout', () => focus.style('display', 'none'))
+   .on('mousemove', mousemove);*/
+  zoom = d3.zoom().scaleExtent([1, 9]);
+	
+  zoom.on('zoom', () => zoomed(gX, gY, dataFiltered));
+  
+  svg.on("mousemove", mousemove);
+>>>>>>> e1426373ae851efa169f0f8824ed7ebd15311906
   svg.call(zoom);
   RedrawY();
 };
-
+let mouselabel = null;
+let mouseline = null;
+const mousemove= (e)=>{
+	let mousex = d3.mouse(svg.node())[0];
+	let x0 = currentX.invert(mousex- margin.left);
+	//console.log([x0,currentX.invert(0)]);
+	if(mouseline == null){
+		mouselabel = svg.append('text');
+		mouseline = svg.append('rect')
+			.attr('width','1')
+			.attr('height',height)
+			
+		/*svg.on("mouseout", ()=>{
+			mouseline.style('fill','rgba(0,0,0,0.0)');
+		});*/
+		
+	}
+	let d = GetDataAtDate(x0);
+	let str = "$"+d.price.toFixed(2);
+	mouselabel.text(str);
+	var xpos = currentX(d.date)+margin.left;
+	
+	if(xpos < margin.left || xpos>width-margin.right){
+		mouseline.style('fill','rgba(0,0,0,0.0)');
+	}else{
+		mouseline.style('fill','rgba(0,0,0,0.2)');
+	}
+	mouseline.attr('transform','translate('+ xpos+','+margin.top+')');
+	mouselabel.attr('transform','translate('+ xpos+','+(margin.top+40)+')');
+};
 $(document).ready(() => {
   d3.csv('data/market-price.csv', (error, data) => {
     globalData = data.map((d) => {
