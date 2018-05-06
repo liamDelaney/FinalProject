@@ -221,11 +221,9 @@ const initiateCanvas = () => {
     .attr('d', createLine)
     .attr('clip-path', 'url(#clip)');
     
-    var eventTooltip = d3.select("body").append("div")
-            .attr("class", "tooltip")
-            .style("opacity", 0);
-
-    canvas.append("g")
+    
+    
+    var events = canvas.append("g")
         .selectAll("dot")
         .data(eventData)
         .enter().append("a")
@@ -243,22 +241,7 @@ const initiateCanvas = () => {
             return xScale(new Date(d.Date))})
         .attr("cy",canvasHeight * 1.06)
         .attr("cursor", "pointer")
-        .attr('clip-path', 'url(#clip)')
-        .on("mouseover", function (d) {
-                    eventTooltip.transition()
-                        .duration(200)
-                        .style("opacity", .85);
-                    eventTooltip.html("Date: " + d.Date + "<br/>" +
-                        "Info: " + d.Description + "<br/>"
-                    )
-                    .style("left", (d3.event.pageX + 10) + "px")
-                    .style("top", (d3.event.pageY - 115) + "px");
-                })
-                .on("mouseout", function (d) {
-                    eventTooltip.transition()
-                        .duration(400)
-                        .style("opacity", 0);
-                });;
+        .attr('clip-path', 'url(#clip)');
     
     canvas.append("line")
         .attr("x1", 0)
@@ -303,6 +286,11 @@ const initiateCanvas = () => {
 };
 let mouselabel = null;
 let mouseline = null;
+
+var eventTooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
 const mousemove= (e)=>{
 	let mousex = d3.mouse(svg.node())[0];
 	let x0 = currentX.invert(mousex- margin.left);
@@ -311,7 +299,7 @@ const mousemove= (e)=>{
 		mouselabel = svg.append('text');
 		mouseline = svg.append('rect')
 			.attr('width','1')
-			.attr('height',height)
+			.attr('height',height * 0.95)
 			
 		/*svg.on("mouseout", ()=>{
 			mouseline.style('fill','rgba(0,0,0,0.0)');
@@ -322,6 +310,23 @@ const mousemove= (e)=>{
 	let str = "$"+d.price.toFixed(2);
 	mouselabel.text(str);
 	var xpos = currentX(d.date)+margin.left;
+    
+    
+    
+    for(event in eventData){
+        if(d.date.getMonth() == new Date(eventData[event]["Date"]).getMonth() && d.date.getYear() == new Date(eventData[event]["Date"]).getYear()){
+            eventTooltip.style("opacity", .85);
+            eventTooltip.html("<b>" + eventData[event]["Date"] + " </b><br/>" +
+                        eventData[event]["Description"] + "<br/>")
+            .style("left", (d3.event.pageX - 150) + "px")
+            .style("top", ((canvasHeight * 1.06) + 125) + "px");
+            break;
+        }
+        else{
+            eventTooltip.style("opacity", 0);
+        }
+    }
+    
 	
 	if(xpos < margin.left || xpos>width-margin.right){
 		mouseline.style('fill','rgba(0,0,0,0.0)');
@@ -330,6 +335,8 @@ const mousemove= (e)=>{
 	}
 	mouseline.attr('transform','translate('+ xpos+','+margin.top+')');
 	mouselabel.attr('transform','translate('+ xpos+','+(margin.top+40)+')');
+    
+    
 };
 $(document).ready(() => {
   d3.csv('data/market-price.csv', (error, data) => {
