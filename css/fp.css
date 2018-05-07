@@ -1,5 +1,9 @@
+.text-btc {
+  color: #FAB915;
+}
+
 svg path.line {
-  stroke: #007bff;
+  stroke: #FAB915;
   fill: none;
   stroke-linejoin: round;
   stroke-linecap: round;
@@ -8,14 +12,14 @@ svg path.line {
 
 svg .dot {
   opacity: 1;
-  stroke: #007bff;
+  stroke: #FAB915;
   stroke-width: 1px;
   cursor: pointer;
   fill: #fff;
 }
 
 svg .dot:hover {
-  fill: #0056B355;
+  fill: #FAB91555;
 }
 
 svg line.timeline {
@@ -32,7 +36,7 @@ svg .vertical-line.active {
 }
 
 svg .vertical-line.active-event {
-  fill: #007bff;
+  fill: #FAB915;
 }
 
 svg .dot.active {

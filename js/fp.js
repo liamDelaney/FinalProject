@@ -25,7 +25,7 @@ const limits = {
   maxX: null,
   minX: null,
 };
-
+const dotFocusedRadius = 10;
 let mouselabel = null;
 let mouseline = null;
 
@@ -142,8 +142,8 @@ const mousemove = () => {
 
   let mouseEvent = null;
   for (let i = 0; i < eventData.length; i += 1) {
-    if (eventData[i].date >= currentXScale.invert(mousex - 5) &&
-      eventData[i].date <= currentXScale.invert(mousex + 5)) {
+    if (eventData[i].date >= currentXScale.invert(mousex - dotFocusedRadius) &&
+      eventData[i].date <= currentXScale.invert(mousex + dotFocusedRadius)) {
       mouseEvent = eventData[i];
       break;
     }
@@ -154,10 +154,21 @@ const mousemove = () => {
       .addClass('active-event')
       .removeClass('active');
     $(`#${mouseEvent.id}`).addClass('active');
+
+    let trendClassName = 'minus mdi-24px';
+    if (mouseEvent.Trend === 'up') {
+      trendClassName = 'menu-up mdi-36px text-success';
+    } else if (mouseEvent.Trend === 'down') {
+      trendClassName = 'menu-down mdi-36px text-danger';
+    }
+
     eventTooltip
       .html(`
         <p>${moment(mouseEvent.date).format('MMM DD, YYYY')}</p>
-        <div class="h6">${mouseEvent.Title}</div>
+        <div class="h6 d-flex align-items-center">
+          ${mouseEvent.Title}
+          <i class="mdi mdi-${trendClassName}"></i>
+        </div>
         <p>${mouseEvent.Description}</p>`)
       .style('left', `${d3.event.pageX - 200}px`);
   } else {
@@ -187,8 +198,6 @@ const initiateCanvas = () => {
 
   canvasHeight = height - margin.top - margin.bottom;
   canvasWidth = width - margin.left - margin.right;
-
-  // tooltipY =
 
   canvas = svg
     .append('g')
