@@ -267,7 +267,8 @@ const initiateCanvas = () => {
       `translate(-40,${canvas.attr('height') / 2}) rotate(270)`,
     ).append('text')
     .attr('text-anchor', 'middle')
-    .text('price');
+    .attr('font-size', "12px")
+    .text('price (USD)');
   zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, dataFiltered, eventData));
   //console.log(xScale(limits.maxX));
    /* svg.append('rect')
@@ -316,9 +317,6 @@ const mousemove= (e)=>{
     var futureDate = new Date(d.date);
     pastDate.setDate(pastDate.getDate() - 14);
     futureDate.setDate(futureDate.getDate() + 14);
-    console.log(pastDate >= futureDate);
-    console.log(d.date, "present")
-    console.log(futureDate, "future");
     
     for(event in eventData){
         if(pastDate <= new Date(eventData[event]["Date"]) && futureDate >= new Date(eventData[event]["Date"])){
@@ -360,7 +358,6 @@ $(document).ready(() => {
       return newe;
     
     });
-    console.log(eventData);
     
     initiateCanvas();
 
