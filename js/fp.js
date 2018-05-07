@@ -2,7 +2,7 @@ let tickerData;
 let eventData;
 const margin = {
   top: 50,
-  right: 50,
+  right: 0,
   bottom: 10,
   left: 50,
 };
@@ -28,9 +28,6 @@ const limits = {
 const dotFocusedRadius = 10;
 let mouselabel = null;
 let mouseline = null;
-
-const eventTooltip = d3.select('#event-tooltip')
-  .attr('class', 'tooltip');
 
 let createLine;
 
@@ -149,36 +146,40 @@ const mousemove = () => {
     }
   }
 
+  $('#event-box').css('left', `${d3.event.pageX - 200}px`);
+
   if (mouseEvent !== null) {
+    $('#event-box>.date').text(moment(mouseEvent.date).format('MMM DD, YYYY'));
+
     $('svg .vertical-line')
       .addClass('active-event')
       .removeClass('active');
     $(`#${mouseEvent.id}`).addClass('active');
 
-    let trendClassName = 'minus mdi-24px';
+    let trendClassName = 'trending-neutral';
     if (mouseEvent.Trend === 'up') {
-      trendClassName = 'menu-up mdi-36px text-success';
+      trendClassName = 'trending-up text-success';
     } else if (mouseEvent.Trend === 'down') {
-      trendClassName = 'menu-down mdi-36px text-danger';
+      trendClassName = 'trending-down text-danger';
     }
 
-    eventTooltip
-      .html(`
-        <p>${moment(mouseEvent.date).format('MMM DD, YYYY')}</p>
-        <div class="h6 d-flex align-items-center">
-          ${mouseEvent.Title}
-          <i class="mdi mdi-${trendClassName}"></i>
-        </div>
-        <p>${mouseEvent.Description}</p>`)
-      .style('left', `${d3.event.pageX - 200}px`);
+    $('#event-box>.title').html(`
+      <div class="d-flex align-items-center">
+        ${mouseEvent.Title}
+        <i class="ml-1 mdi mdi-24px mdi-${trendClassName}"></i>
+      </div>`);
+    $('#event-box>.summary').text(mouseEvent.Description);
+    $('#event-box>.title').fadeIn();
+    $('#event-box>.summary').fadeIn();
   } else {
+    $('#event-box>.date').text(moment(d.date).format('MMM DD, YYYY'));
+
     $('.dot').removeClass('active');
     $('svg .vertical-line')
       .addClass('active')
       .removeClass('active-event');
-    eventTooltip
-      .html(`<p>${moment(mouseDate).format('MMM DD, YYYY')}</p>`)
-      .style('left', `${d3.event.pageX - 200}px`);
+    $('#event-box>.title').hide();
+    $('#event-box>.summary').hide();
   }
 
   mouseline.classed('active', xpos >= margin.left && xpos <= width - margin.right);
@@ -194,7 +195,6 @@ const initiateCanvas = () => {
 
   width = $('#chart-container>svg').width() - margin.left - margin.right;
   height = $('#chart-container>svg').height() - margin.top - margin.bottom;
-
 
   canvasHeight = height - margin.top - margin.bottom;
   canvasWidth = width - margin.left - margin.right;
@@ -332,4 +332,8 @@ $(document).ready(() => {
       bindArrowKeys();
     }
   });
+});
+
+$(window).resize(() => {
+  initiateCanvas();
 });

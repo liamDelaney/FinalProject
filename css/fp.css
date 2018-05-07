@@ -45,19 +45,22 @@ svg .dot.active {
   transition: r 0.2s ease;
 }
 
-svg .axis > .tick > line {
+svg .axis>.tick>line {
   stroke: #00000050;
 }
 
-.tooltip {
-  position: absolute;
+#event-box {
   width: 400px;
   height: 200px;
-  font-size: 12px;
-  padding: 5px;
   pointer-events: none;
-  background-color: white;
-  font-family: "Work Sans", sans-serif;
   text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
-  opacity: 0.80;
+}
+
+#event-box .title, #event-box .title>div {
+  height: 30px;
+}
+
+.story-box:hover {
+  box-shadow: inset 0 0 0 4px #ff9900;
+  height: 100px;
 }
