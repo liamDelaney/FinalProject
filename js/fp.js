@@ -1,16 +1,21 @@
-let tickerData;
+const tickerData = {};
 let eventData;
 const margin = {
   top: 50,
   right: 0,
-  bottom: 10,
-  left: 50,
+  bottom: 60,
+  left: 70,
 };
+
+const timelineTop = 40; // timeline's distance from x-axis
+const dotRadius = 5; // normal circle size
+const dotFocusedRadius = 10; // enlarged circle size
+const timelineHeight = 2 * dotRadius;
+const vlineTextTop = 40; // vertical line label's top margin
+const vlineTextOffset = 20; // vertical line label's top offset
 
 let width;
 let height;
-let canvasHeight;
-let canvasWidth;
 let xScale = null;
 let yScale = null;
 let currentXScale = xScale;
@@ -25,9 +30,6 @@ const limits = {
   maxX: null,
   minX: null,
 };
-const dotFocusedRadius = 10;
-let mouselabel = null;
-let mouseline = null;
 
 let createLine;
 
@@ -60,18 +62,16 @@ const bindArrowKeys = () => {
   });
 };
 
-const filterData = () => tickerData.filter(() => true);
-
 const drawGridLines = () => {
   d3.selectAll('.axis--y > g.tick > line')
-    .attr('x2', canvasWidth);
+    .attr('x2', width);
 };
 
-const rescaleY = (dataFiltered) => {
+const rescaleY = () => {
   const minX = currentXScale.invert(0);
-  const maxX = currentXScale.invert(canvasWidth);
+  const maxX = currentXScale.invert(width);
 
-  const eMaxY = d3.max(dataFiltered, (d) => {
+  const eMaxY = d3.max(tickerData.btc, (d) => {
     if (d.date >= limits.minX && d.date <= limits.maxX &&
       d.date >= minX && d.date <= maxX) {
       return d.price;
@@ -83,21 +83,21 @@ const rescaleY = (dataFiltered) => {
 
   yScale = d3.scaleLinear()
     .domain([limits.maxY * 1.1, limits.minY - (limits.minY * 0.1)])
-    .range([0, +canvas.attr('height')]);
+    .range([0, height]);
 };
 
-const zoomed = (gX, gY, dataFiltered) => {
+const zoomed = (gX, gY) => {
   const { transform } = d3.event;
   transform.x = Math.min(0, Math.max(transform.x, width * (1 - transform.k)));
   zoom.transform.x = transform.x;
   gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
   currentXScale = d3.event.transform.rescaleX(xScale);
   gY.call(yAxis.scale(yScale));
-  rescaleY(dataFiltered);
+  rescaleY(tickerData.btc);
   createLine.x(d => currentXScale(new Date(d.date)));
   createLine.y(d => yScale(d.price));
   canvas.selectAll('path.line')
-    .datum(dataFiltered)
+    .datum(tickerData.btc)
     .attr('d', createLine)
     .attr('clip-path', 'url(#clip)');
   drawGridLines();
@@ -106,36 +106,49 @@ const zoomed = (gX, gY, dataFiltered) => {
     .attr('cx', d => currentXScale(new Date(d.date)));
 };
 
-const getDataAtDate = (date) => {
-  let d = null;
-  for (let i = 0; i < tickerData.length; i += 1) {
-    if (date < tickerData[i].date) {
-      break;
+const findData = (ticker, date) => {
+  for (let i = 0; i < tickerData[ticker].length; i += 1) {
+    if (date < tickerData[ticker][i].date) {
+      return tickerData[ticker][i];
     }
-    d = tickerData[i];
   }
-  return d;
+  return tickerData[ticker][tickerData[ticker].length - 1];
 };
 
 const mousemove = () => {
-  const mousex = d3.mouse(svg.node())[0] - margin.left;
+  const mousex = d3.mouse(canvas.node())[0];
   const mouseDate = currentXScale.invert(mousex);
-  if (mouseline === null) {
-    mouselabel = svg.append('text');
-    mouseline = svg.append('rect')
-      .classed('vertical-line', true)
-      .attr('width', '1')
-      .attr('height', height * 0.95);
-  }
+  canvas.selectAll('.vertical-line-text').remove();
+  canvas.selectAll('.vertical-line').remove();
 
-  const d = getDataAtDate(mouseDate);
-
+  const d = findData('btc', mouseDate);
   if (d === null) {
     return;
   }
-  const str = `$${d.price.toFixed(2)}`;
-  mouselabel.text(str);
-  const xpos = currentXScale(d.date) + margin.left;
+  const xpos = currentXScale(d.date);
+  if (xpos < 0 || xpos > width) {
+    return;
+  }
+
+  canvas.append('text')
+    .attr('class', 'vertical-line-text small text-btc')
+    .text(`1 BTC = $${d.price.toFixed(2)}`)
+    .attr('transform', `translate(${xpos + 5}, ${vlineTextTop})`);
+  canvas.append('text')
+    .attr('class', 'vertical-line-text small text-eth')
+    .text(`1 ETH = $${findData('eth', d.date).price}`)
+    .attr('transform', `translate(${xpos + 5}, ${vlineTextTop + vlineTextOffset})`);
+  canvas.append('text')
+    .attr('class', 'vertical-line-text small text-ltc')
+    .text(`1 LTC = $${findData('ltc', d.date).price}`)
+    .attr('transform', `translate(${xpos + 5}, ${vlineTextTop + vlineTextOffset + vlineTextOffset})`);
+  canvas.append('line')
+    .classed('vertical-line', true)
+    .attr('width', '1')
+    .attr('x1', xpos)
+    .attr('y1', 0)
+    .attr('x2', xpos)
+    .attr('y2', height + timelineTop);
 
   let mouseEvent = null;
   for (let i = 0; i < eventData.length; i += 1) {
@@ -146,7 +159,9 @@ const mousemove = () => {
     }
   }
 
-  $('#event-box').css('left', `${d3.event.pageX - 200}px`);
+
+  const verticalLineLeft = $('.vertical-line').position().left;
+  $('#event-box').css('left', `${verticalLineLeft - 200}px`);
 
   if (mouseEvent !== null) {
     $('#event-box>.date').text(moment(mouseEvent.date).format('MMM DD, YYYY'));
@@ -181,41 +196,30 @@ const mousemove = () => {
     $('#event-box>.title').hide();
     $('#event-box>.summary').hide();
   }
-
-  mouseline.classed('active', xpos >= margin.left && xpos <= width - margin.right);
-  mouseline.attr('transform', `translate(${xpos}, ${margin.top})`);
-  mouselabel.attr('transform', `translate(${xpos + 5}, ${margin.top + 40})`);
 };
 
 const initiateCanvas = () => {
   svg = d3.select('#chart-container>svg');
   svg.selectAll('*').remove();
 
-  const dataFiltered = filterData();
-
   width = $('#chart-container>svg').width() - margin.left - margin.right;
   height = $('#chart-container>svg').height() - margin.top - margin.bottom;
-
-  canvasHeight = height - margin.top - margin.bottom;
-  canvasWidth = width - margin.left - margin.right;
 
   canvas = svg
     .append('g')
     .attr('id', 'canvas')
-    .attr('width', canvasWidth)
-    .attr('height', canvasHeight)
     .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-  const eMaxX = d3.max(dataFiltered, d => d.date);
-  const eMinX = d3.min(dataFiltered, d => d.date);
+  const eMaxX = d3.max(tickerData.btc, d => d.date);
+  const eMinX = d3.min(tickerData.btc, d => d.date);
 
-  if (limits.maxX == null) {
+  if (limits.maxX === null) {
     limits.maxX = eMaxX;
   } else if (eMaxX > limits.maxX) {
     limits.maxX = eMaxX;
   }
 
-  if (limits.minX == null) {
+  if (limits.minX === null) {
     limits.minX = eMinX;
   } else if (eMinX < limits.minX) {
     limits.minX = eMinX;
@@ -223,31 +227,30 @@ const initiateCanvas = () => {
 
   xScale = d3.scaleTime()
     .domain([limits.minX, limits.maxX])
-    .range([0, +canvas.attr('width')]);
+    .range([0, width]);
   currentXScale = xScale;
-  rescaleY(dataFiltered, xScale);
+  rescaleY(tickerData.btc, xScale);
   createLine = d3.line().x(d => xScale(d.date)).y(d => yScale(d.price));
 
-  xAxis = d3.axisBottom(xScale);
-  yAxis = d3.axisLeft(yScale);
+  xAxis = d3.axisBottom(xScale).ticks(16);
+  yAxis = d3.axisLeft(yScale).ticks(8);
 
   canvas.append('clipPath')
     .attr('id', 'clip')
     .append('rect')
-    .attr('width', canvasWidth)
-    .attr('height', canvasHeight + 200);
+    .attr('width', width)
+    .attr('height', height);
 
   const gX = canvas.append('g')
-    .attr('transform', `translate(0, ${canvas.attr('height')})`)
+    .attr('transform', `translate(0, ${height})`)
     .attr('class', 'axis axis--x')
     .call(xAxis);
 
   const gY = canvas.append('g').attr('class', 'axis axis--y').call(yAxis);
 
-
   canvas
     .append('path')
-    .datum(dataFiltered)
+    .datum(tickerData.btc)
     .classed('line', true)
     .attr('d', createLine)
     .attr('clip-path', 'url(#clip)');
@@ -263,35 +266,34 @@ const initiateCanvas = () => {
     .attr('class', 'dot')
     .attr('r', 5)
     .attr('cx', d => xScale(new Date(d.date)))
-    .attr('cy', canvasHeight + 45)
-    .attr('clip-path', 'url(#clip)');
+    .attr('cy', height + timelineTop + dotRadius);
 
   canvas.append('line')
     .attr('x1', 0)
-    .attr('y1', canvasHeight + 40)
-    .attr('x2', canvasWidth)
-    .attr('y2', canvasHeight + 40)
+    .attr('y1', height + timelineTop)
+    .attr('x2', width)
+    .attr('y2', height + timelineTop)
     .classed('timeline', true);
 
   canvas.append('line')
     .attr('x1', 0)
-    .attr('y1', canvasHeight + 50)
-    .attr('x2', canvasWidth)
-    .attr('y2', canvasHeight + 50)
+    .attr('y1', height + timelineTop + timelineHeight)
+    .attr('x2', width)
+    .attr('y2', height + timelineTop + timelineHeight)
     .classed('timeline', true);
 
   canvas.append('g')
     .attr(
       'transform',
-      `translate(-40,${canvas.attr('height') / 2}) rotate(270)`,
+      `translate(-50,${height / 2}) rotate(270)`,
     ).append('text')
     .attr('text-anchor', 'middle')
     .attr('font-size', '12px')
-    .text('price (USD)');
-  zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, dataFiltered, eventData));
+    .text('Price (USD)');
+  zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, eventData));
   zoom = d3.zoom().scaleExtent([1, 9]);
 
-  zoom.on('zoom', () => zoomed(gX, gY, dataFiltered, eventData));
+  zoom.on('zoom', () => zoomed(gX, gY, eventData));
 
   svg.on('mousemove', mousemove);
   svg.call(zoom);
@@ -300,37 +302,47 @@ const initiateCanvas = () => {
 
 $(document).ready(() => {
   let loaded = 0;
+  const coinTickers = ['eth', 'ltc'];
+  const loadData = () => {
+    loaded += 1;
+    if (loaded === coinTickers.length + 2) {
+      initiateCanvas();
+      bindArrowKeys();
+    }
+  };
+
+  coinTickers.forEach((ticker) => {
+    d3.csv(`data/${ticker}.csv`, (error, data) => {
+      const data2 = data.map(d => ({
+        date: new Date(d.date),
+        price: parseFloat(d['price(USD)'], 10),
+      }));
+      tickerData[ticker] = _.sortBy(data2, ['date']);
+      loadData();
+    });
+  });
+
   d3.csv('data/market-price.csv', (error, data) => {
-    tickerData = data.map((d) => {
+    const data2 = data.map((d) => {
       const newd = _.clone(d);
       newd.date = new Date(newd.date);
       newd.price = parseFloat(newd.price);
       return newd;
     });
-    tickerData = _.sortBy(tickerData, ['date']);
-    loaded += 1;
-
-    if (loaded === 2) {
-      initiateCanvas();
-      bindArrowKeys();
-    }
+    tickerData.btc = _.sortBy(data2, ['date']);
+    loadData();
   });
 
   d3.csv('data/events-timeline.csv', (error, data) => {
-    eventData = data.map((d, i) => {
+    const data2 = data.map((d, i) => {
       const newe = _.clone(d);
       newe.date = new Date(newe.Date);
       newe.Date = undefined;
       newe.id = `event-${i}`;
       return newe;
     });
-    eventData = _.sortBy(eventData, ['Date']);
-    loaded += 1;
-
-    if (loaded === 2) {
-      initiateCanvas();
-      bindArrowKeys();
-    }
+    eventData = _.sortBy(data2, ['Date']);
+    loadData();
   });
 });
 

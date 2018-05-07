@@ -1,5 +1,20 @@
+body {
+    overflow: hidden;
+}
+
 .text-btc {
   color: #FAB915;
+  fill: #FAB915;
+}
+
+.text-eth {
+  color: #324D5C;
+  fill: #324D5C;
+}
+
+.text-ltc {
+  color: #46B29D;
+  fill: #46B29D;
 }
 
 svg path.line {
@@ -27,16 +42,16 @@ svg line.timeline {
   stroke: #00000050;
 }
 
-svg rect.vertical-line {
-  fill: none;
+svg .vertical-line {
+  stroke: none;
 }
 
 svg .vertical-line.active {
-  fill: #00000050;
+  stroke: #00000050;
 }
 
 svg .vertical-line.active-event {
-  fill: #FAB915;
+  stroke: #FAB915;
 }
 
 svg .dot.active {
@@ -46,6 +61,7 @@ svg .dot.active {
 }
 
 svg .axis>.tick>line {
+  shape-rendering: crispEdges;
   stroke: #00000050;
 }
 
@@ -58,9 +74,4 @@ svg .axis>.tick>line {
 
 #event-box .title, #event-box .title>div {
   height: 30px;
-}
-
-.story-box:hover {
-  box-shadow: inset 0 0 0 4px #ff9900;
-  height: 100px;
 }
