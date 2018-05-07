@@ -67,7 +67,7 @@ const filterData = () => globalData.filter(() => true);
 
 const zoomed = (gX,gY, dataFiltered, eventData) => {
 	let transform = d3.event.transform;
-	tx = Math.min(0, Math.max(transform.x, width *1 - width * transform.k+width*(transform.k-1)/7)),
+	tx = Math.min(0, Math.max(transform.x, width *1 - width * transform.k+0*width*(transform.k-1)/7)),
 	//ty = Math.min(0, Math.max(transform.x, height - height * transform.k));
 	transform.x = tx;
 	zoom.transform.x = tx;
@@ -151,6 +151,8 @@ const initiateCanvas = () => {
 
    canvasHeight = height - margin.top - margin.bottom;
    canvasWidth = width - margin.left - margin.right;
+    
+    tooltipY = 
 
    canvas = svg.append('g')
     .attr('id', 'canvas')
@@ -199,7 +201,7 @@ const initiateCanvas = () => {
     .attr('id', 'clip')
     .append('rect')
     .attr('width', canvasWidth)
-    .attr('height', canvasHeight * 1.1);
+    .attr('height', canvasHeight + 200);
 
   const gX = canvas.append('g')
     .attr('transform', 'translate(0,' + (+canvas.attr('height')) + ')')
@@ -221,14 +223,13 @@ const initiateCanvas = () => {
     .attr('d', createLine)
     .attr('clip-path', 'url(#clip)');
     
+    eventTooltip.style("top", (canvasHeight + 170) + "px");
     
-    
-    var events = canvas.append("g")
+    canvas.append("g")
         .selectAll("dot")
         .data(eventData)
         .enter().append("a")
         .attr("xlink:href", function(d){
-            console.log(d.Link)
             return d.Link})
         .append("circle")
         .attr('class', 'dot')
@@ -239,23 +240,23 @@ const initiateCanvas = () => {
         .attr("stroke-width", "1px")
         .attr("cx",function(d){
             return xScale(new Date(d.Date))})
-        .attr("cy",canvasHeight * 1.06)
+        .attr("cy",canvasHeight + 45)
         .attr("cursor", "pointer")
         .attr('clip-path', 'url(#clip)');
     
     canvas.append("line")
         .attr("x1", 0)
-        .attr("y1", canvasHeight * 1.06 - 5)
+        .attr("y1", canvasHeight + 40)
         .attr("x2", canvasWidth)
-        .attr("y2", canvasHeight * 1.06 - 5)
+        .attr("y2", canvasHeight + 40)
         .style("opacity", 1)
         .style("stroke", "grey");
     
     canvas.append("line")
         .attr("x1", 0)
-        .attr("y1", canvasHeight * 1.06 + 5)
+        .attr("y1", canvasHeight + 50)
         .attr("x2", canvasWidth)
-        .attr("y2", canvasHeight * 1.06 + 5)
+        .attr("y2", canvasHeight + 50)
         .style("opacity", 1)
         .style("stroke", "grey");
     
@@ -311,15 +312,21 @@ const mousemove= (e)=>{
 	mouselabel.text(str);
 	var xpos = currentX(d.date)+margin.left;
     
-    
+    var pastDate = new Date(d.date);
+    var futureDate = new Date(d.date);
+    pastDate.setDate(pastDate.getDate() - 14);
+    futureDate.setDate(futureDate.getDate() + 14);
+    console.log(pastDate >= futureDate);
+    console.log(d.date, "present")
+    console.log(futureDate, "future");
     
     for(event in eventData){
-        if(d.date.getMonth() == new Date(eventData[event]["Date"]).getMonth() && d.date.getYear() == new Date(eventData[event]["Date"]).getYear()){
+        if(pastDate <= new Date(eventData[event]["Date"]) && futureDate >= new Date(eventData[event]["Date"])){
             eventTooltip.style("opacity", .85);
-            eventTooltip.html("<b>" + eventData[event]["Date"] + " </b><br/>" +
+            eventTooltip.html(eventData[event]["Date"] + "<br/><b style='font-size: 16px;'>" + eventData[event]["Title"] + " </b><br/>" +
                         eventData[event]["Description"] + "<br/>")
-            .style("left", (d3.event.pageX - 150) + "px")
-            .style("top", ((canvasHeight * 1.06) + 125) + "px");
+            .style("left", (d3.event.pageX - 200) + "px")
+            .style("top", (canvasHeight + 170) + "px");
             break;
         }
         else{
@@ -346,7 +353,7 @@ $(document).ready(() => {
       newd.price = parseFloat(newd.price);
       return newd;
     });
- d3.csv('data/event-timeline.csv', (error, data) => {
+ d3.csv('data/events-timeline.csv', (error, data) => {
     eventData = data.map((d) => {
       const newe = _.clone(d);
       newe.date = new Date(newe.date);
