@@ -1,0 +1,59 @@
+svg path.line {
+  stroke: #007bff;
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+svg .dot {
+  opacity: 1;
+  stroke: #007bff;
+  stroke-width: 1px;
+  cursor: pointer;
+  fill: #fff;
+}
+
+svg .dot:hover {
+  fill: #0056B355;
+}
+
+svg line.timeline {
+  stroke-width: 1;
+  stroke: #00000050;
+}
+
+svg rect.vertical-line {
+  fill: none;
+}
+
+svg .vertical-line.active {
+  fill: #00000050;
+}
+
+svg .vertical-line.active-event {
+  fill: #007bff;
+}
+
+svg .dot.active {
+  stroke-width: 2px;
+  r: 10;
+  transition: r 0.2s ease;
+}
+
+svg .axis > .tick > line {
+  stroke: #00000050;
+}
+
+.tooltip {
+  position: absolute;
+  width: 400px;
+  height: 200px;
+  font-size: 12px;
+  padding: 5px;
+  pointer-events: none;
+  background-color: white;
+  font-family: "Work Sans", sans-serif;
+  text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+  opacity: 0.80;
+}

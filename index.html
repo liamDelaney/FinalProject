@@ -15,25 +15,7 @@
   <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
   <link rel="stylesheet" href="css/materialdesignicons.min.css">
   <link rel="stylesheet" href="css/bootstrap.min.css">
-  <!-- <link rel="stylesheet" href="css/timeline.css"> -->
-<style>
-    circle:hover {
-        stroke-width: 3px;
-    }
-
-    .tooltip {
-            position: absolute;
-            width: 400px;
-            height: 200px;
-            font-size: 12px;
-            padding: 5px;
-            pointer-events: none;
-            background-color: white;
-            font-family: "Work Sans", sans-serif;
-            text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
-            opacity: 0.80;
-    }
-</style>
+  <link rel="stylesheet" href="css/fp.css">
 </head>
 
 <body>
@@ -41,14 +23,14 @@
     <nav class="navbar navbar-expand-lg">
       <a class="navbar-brand" href="javascript:void(0)"><i class="mdi mdi-bitcoin mdi-36px"></i></a>
       <ul class="navbar-nav ml-auto">
-        <li class="navbar-text pr-1">
+        <!-- <li class="navbar-text pr-1">
           <i class="mdi mdi-filter-outline mdi-24px"></i>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="javascript:void(0)">
             <i class="mdi mdi-filter mdi-24px"></i>
           </a>
-        </li>
+        </li> -->
         <li class="nav-item">
           <a class="nav-link" href="javascript:void(0)" data-toggle="modal" data-target="#about">
             <i class="mdi mdi-help-circle-outline mdi-24px"></i>
@@ -57,15 +39,14 @@
       </ul>
     </nav>
 
-    <div class="row no-gutters d-flex align-items-stretch w-100" style="position: absolute; top: 64px; bottom: 0px;">
-      
-	  <!--<div class="col-4 d-flex flex-column justify-content-around">
+    <div class="row no-gutters d-flex align-items-stretch w-100" style="position: absolute; top: 64px; bottom: 200px;">
+      <!--<div class="col-4 d-flex flex-column justify-content-around">
         <div class="p-3">
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas iaculis auctor ornare. Ut posuere pretium egestas.
         </div>
       </div>-->
       <div class="col-2">
-	  </div>
+      </div>
       <div class="main col-9">
         <div id="chart-container" class="position-absolute w-100 h-100">
           <svg class="position-absolute w-100 h-100"></svg>
@@ -73,6 +54,8 @@
       </div>
     </div>
 
+    <div id="event-tooltip" class="row no-gutters d-flex align-items-stretch w-100" style="position: absolute; bottom: 0; height: 200px;">
+    </div>
   </div>
 
   <div class="modal fade" id="about" tabindex="-1" role="dialog" aria-hidden="true">
@@ -86,7 +69,8 @@
         </div>
         <div class="modal-body">
           <p>
-            The goal of our visualization is to provide a comprehensive and accessible history of both Bitcoin’s value and the events that shaped it. By providing a combination of significant events (milestones, booms, crashes) with price data, users should be able to contextualize these two metrics, and understand their relationship to each other. Our visualization should ultimately allow one to come away with a much more informed understanding of the cryptocurrency history, and perhaps even it’s future.
+            The goal of our visualization is to provide a comprehensive and accessible history of both Bitcoin’s value and the events that shaped it. By providing a combination of significant events (milestones, booms, crashes) with price data, users should be able
+            to contextualize these two metrics, and understand their relationship to each other. Our visualization should ultimately allow one to come away with a much more informed understanding of the cryptocurrency history, and perhaps even it’s future.
           </p>
         </div>
         <div class="modal-footer">
@@ -101,7 +85,8 @@
   <script src="js/jquery.min.js"></script>
   <script src="js/bootstrap.bundle.min.js"></script>
   <script src="js/lodash.min.js"></script>
-  <script src="js/fp3.js"></script>
+  <script src="js/moment.min.js"></script>
+  <script src="js/fp.js"></script>
 </body>
 
 </html>

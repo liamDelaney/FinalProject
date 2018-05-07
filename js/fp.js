@@ -1,4 +1,4 @@
-let globalData;
+let tickerData;
 let eventData;
 const margin = {
   top: 50,
@@ -13,6 +13,7 @@ let canvasHeight;
 let canvasWidth;
 let xScale = null;
 let yScale = null;
+let currentXScale = xScale;
 let xAxis;
 let yAxis;
 let svg;
@@ -25,12 +26,11 @@ const limits = {
   minX: null,
 };
 
-const settings = {
-  targets: [],
-  detail: {
-    type: 'line',
-  },
-};
+let mouselabel = null;
+let mouseline = null;
+
+const eventTooltip = d3.select('#event-tooltip')
+  .attr('class', 'tooltip');
 
 let createLine;
 
@@ -63,82 +63,118 @@ const bindArrowKeys = () => {
   });
 };
 
-const filterData = () => globalData.filter(() => true);
+const filterData = () => tickerData.filter(() => true);
 
-const zoomed = (gX,gY, dataFiltered, eventData) => {
-	let transform = d3.event.transform;
-	tx = Math.min(0, Math.max(transform.x, width *1 - width * transform.k+0*width*(transform.k-1)/7)),
-	//ty = Math.min(0, Math.max(transform.x, height - height * transform.k));
-	transform.x = tx;
-	zoom.transform.x = tx;
-	//transform.y = ty;
-	/*	// then, update the zoom behavior's internal translation, so that
-		// it knows how to properly manipulate it on the next movement
-		zoom.translate([tx, ty]);
-		// and finally, update the <g> element's transform attribute with the
-		// correct translation and scale (in reverse order)
-		g.attr("transform", [
-		  "translate(" + [tx, ty] + ")",
-		  "scale(" + e.scale + ")"
-	].join(" "));*/
-	gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
-	 currentX = d3.event.transform.rescaleX(xScale);
-	//const newY = d3.event.transform.rescaleY(yScale);
-	gY.call(yAxis.scale(yScale));
-	RescaleY(dataFiltered,currentX);
-	createLine.x(d => currentX(new Date(d.date)));
-	createLine.y(d => yScale(d.price));
-	canvas.selectAll('path.line')
-	  .datum(dataFiltered)
-	  .attr('d', createLine)
-	  .attr('clip-path', 'url(#clip)');
-	  RedrawY();
-    canvas.selectAll('.dot')
-        .data(eventData)
-        .attr("cx",function(d){return currentX(new Date(d.Date))});
+const drawGridLines = () => {
+  d3.selectAll('.axis--y > g.tick > line')
+    .attr('x2', canvasWidth);
 };
 
-const RescaleY = (dataFiltered,currentX)=>{
-	//console.log(new Date(currentX.invert(0)));
-	//console.log(new Date(currentX.invert(canvasWidth)));
-	let minX = currentX.invert(0);
-	let maxX = currentX.invert(canvasWidth);
-	
-	
+const rescaleY = (dataFiltered) => {
+  const minX = currentXScale.invert(0);
+  const maxX = currentXScale.invert(canvasWidth);
+
   const eMaxY = d3.max(dataFiltered, (d) => {
-  
-	if(d.date >= limits.minX && d.date <= limits.maxX && 
-		d.date >= minX && d.date <= maxX ){
-		return d.price;
-	}
-	return 1;
-  });
-  const eMinY = d3.min(dataFiltered, (d) => {
-	return 0;
+    if (d.date >= limits.minX && d.date <= limits.maxX &&
+      d.date >= minX && d.date <= maxX) {
+      return d.price;
+    }
+    return 1;
   });
   limits.maxY = eMaxY;
-  limits.minY = eMinY;
-
+  limits.minY = 0;
 
   yScale = d3.scaleLinear()
     .domain([limits.maxY * 1.1, limits.minY - (limits.minY * 0.1)])
     .range([0, +canvas.attr('height')]);
 };
-const RedrawY = ()=>{
-  d3.selectAll('.axis--y > g.tick > line')
-    .attr('x2', canvasWidth)
-    .style('stroke', 'lightgrey');
+
+const zoomed = (gX, gY, dataFiltered) => {
+  const { transform } = d3.event;
+  transform.x = Math.min(0, Math.max(transform.x, width * (1 - transform.k)));
+  zoom.transform.x = transform.x;
+  gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
+  currentXScale = d3.event.transform.rescaleX(xScale);
+  gY.call(yAxis.scale(yScale));
+  rescaleY(dataFiltered);
+  createLine.x(d => currentXScale(new Date(d.date)));
+  createLine.y(d => yScale(d.price));
+  canvas.selectAll('path.line')
+    .datum(dataFiltered)
+    .attr('d', createLine)
+    .attr('clip-path', 'url(#clip)');
+  drawGridLines();
+  canvas.selectAll('.dot')
+    .data(eventData)
+    .attr('cx', d => currentXScale(new Date(d.date)));
 };
-const GetDataAtDate= (date)=>{
-	var d = {};
-	for(var i = 0 ; i < globalData.length; i++){
-		if(date < globalData[i].date){
-			break;
-		}
-		d = globalData[i];
-	}
-	return d;
+
+const getDataAtDate = (date) => {
+  let d = null;
+  for (let i = 0; i < tickerData.length; i += 1) {
+    if (date < tickerData[i].date) {
+      break;
+    }
+    d = tickerData[i];
+  }
+  return d;
 };
+
+const mousemove = () => {
+  const mousex = d3.mouse(svg.node())[0] - margin.left;
+  const mouseDate = currentXScale.invert(mousex);
+  if (mouseline === null) {
+    mouselabel = svg.append('text');
+    mouseline = svg.append('rect')
+      .classed('vertical-line', true)
+      .attr('width', '1')
+      .attr('height', height * 0.95);
+  }
+
+  const d = getDataAtDate(mouseDate);
+
+  if (d === null) {
+    return;
+  }
+  const str = `$${d.price.toFixed(2)}`;
+  mouselabel.text(str);
+  const xpos = currentXScale(d.date) + margin.left;
+
+  let mouseEvent = null;
+  for (let i = 0; i < eventData.length; i += 1) {
+    if (eventData[i].date >= currentXScale.invert(mousex - 5) &&
+      eventData[i].date <= currentXScale.invert(mousex + 5)) {
+      mouseEvent = eventData[i];
+      break;
+    }
+  }
+
+  if (mouseEvent !== null) {
+    $('svg .vertical-line')
+      .addClass('active-event')
+      .removeClass('active');
+    $(`#${mouseEvent.id}`).addClass('active');
+    eventTooltip
+      .html(`
+        <p>${moment(mouseEvent.date).format('MMM DD, YYYY')}</p>
+        <div class="h6">${mouseEvent.Title}</div>
+        <p>${mouseEvent.Description}</p>`)
+      .style('left', `${d3.event.pageX - 200}px`);
+  } else {
+    $('.dot').removeClass('active');
+    $('svg .vertical-line')
+      .addClass('active')
+      .removeClass('active-event');
+    eventTooltip
+      .html(`<p>${moment(mouseDate).format('MMM DD, YYYY')}</p>`)
+      .style('left', `${d3.event.pageX - 200}px`);
+  }
+
+  mouseline.classed('active', xpos >= margin.left && xpos <= width - margin.right);
+  mouseline.attr('transform', `translate(${xpos}, ${margin.top})`);
+  mouselabel.attr('transform', `translate(${xpos + 5}, ${margin.top + 40})`);
+};
+
 const initiateCanvas = () => {
   svg = d3.select('#chart-container>svg');
   svg.selectAll('*').remove();
@@ -149,12 +185,13 @@ const initiateCanvas = () => {
   height = $('#chart-container>svg').height() - margin.top - margin.bottom;
 
 
-   canvasHeight = height - margin.top - margin.bottom;
-   canvasWidth = width - margin.left - margin.right;
-    
-    tooltipY = 
+  canvasHeight = height - margin.top - margin.bottom;
+  canvasWidth = width - margin.left - margin.right;
 
-   canvas = svg.append('g')
+  // tooltipY =
+
+  canvas = svg
+    .append('g')
     .attr('id', 'canvas')
     .attr('width', canvasWidth)
     .attr('height', canvasHeight)
@@ -178,24 +215,12 @@ const initiateCanvas = () => {
   xScale = d3.scaleTime()
     .domain([limits.minX, limits.maxX])
     .range([0, +canvas.attr('width')]);
-	currentX = xScale;
-  RescaleY(dataFiltered,xScale);
+  currentXScale = xScale;
+  rescaleY(dataFiltered, xScale);
   createLine = d3.line().x(d => xScale(d.date)).y(d => yScale(d.price));
 
   xAxis = d3.axisBottom(xScale);
   yAxis = d3.axisLeft(yScale);
-
-  canvas.selectAll('.targets')
-    .data(settings.targets)
-    .enter()
-    .append('line')
-    .classed('targets', true)
-    .style('stroke', d => d.color)
-    .style('stroke-width', 1)
-    .attr('x1', xScale(limits.minX))
-    .attr('x2', yScale(limits.maxX))
-    .attr('y1', d => d.value)
-    .attr('y2', d => d.value);
 
   canvas.append('clipPath')
     .attr('id', 'clip')
@@ -204,7 +229,7 @@ const initiateCanvas = () => {
     .attr('height', canvasHeight + 200);
 
   const gX = canvas.append('g')
-    .attr('transform', 'translate(0,' + (+canvas.attr('height')) + ')')
+    .attr('transform', `translate(0, ${canvas.attr('height')})`)
     .attr('class', 'axis axis--x')
     .call(xAxis);
 
@@ -214,154 +239,88 @@ const initiateCanvas = () => {
   canvas
     .append('path')
     .datum(dataFiltered)
-    .attr('fill', 'none')
     .classed('line', true)
-    .attr('stroke', 'steelblue')
-    .attr('stroke-linejoin', 'round')
-    .attr('stroke-linecap', 'round')
-    .attr('stroke-width', 1.5)
     .attr('d', createLine)
     .attr('clip-path', 'url(#clip)');
-    
-    eventTooltip.style("top", (canvasHeight + 170) + "px");
-    
-    canvas.append("g")
-        .selectAll("dot")
-        .data(eventData)
-        .enter().append("a")
-        .attr("xlink:href", function(d){
-            return d.Link})
-        .append("circle")
-        .attr('class', 'dot')
-        .attr("r", 5)
-        .style("opacity", 1)
-        .style("fill", "white")
-        .attr("stroke", "steelblue")
-        .attr("stroke-width", "1px")
-        .attr("cx",function(d){
-            return xScale(new Date(d.Date))})
-        .attr("cy",canvasHeight + 45)
-        .attr("cursor", "pointer")
-        .attr('clip-path', 'url(#clip)');
-    
-    canvas.append("line")
-        .attr("x1", 0)
-        .attr("y1", canvasHeight + 40)
-        .attr("x2", canvasWidth)
-        .attr("y2", canvasHeight + 40)
-        .style("opacity", 1)
-        .style("stroke", "grey");
-    
-    canvas.append("line")
-        .attr("x1", 0)
-        .attr("y1", canvasHeight + 50)
-        .attr("x2", canvasWidth)
-        .attr("y2", canvasHeight + 50)
-        .style("opacity", 1)
-        .style("stroke", "grey");
-    
-    
+
+  canvas.append('g')
+    .selectAll('dot')
+    .data(eventData)
+    .enter()
+    .append('a')
+    .attr('xlink:href', d => d.Link)
+    .append('circle')
+    .attr('id', d => d.id)
+    .attr('class', 'dot')
+    .attr('r', 5)
+    .attr('cx', d => xScale(new Date(d.date)))
+    .attr('cy', canvasHeight + 45)
+    .attr('clip-path', 'url(#clip)');
+
+  canvas.append('line')
+    .attr('x1', 0)
+    .attr('y1', canvasHeight + 40)
+    .attr('x2', canvasWidth)
+    .attr('y2', canvasHeight + 40)
+    .classed('timeline', true);
+
+  canvas.append('line')
+    .attr('x1', 0)
+    .attr('y1', canvasHeight + 50)
+    .attr('x2', canvasWidth)
+    .attr('y2', canvasHeight + 50)
+    .classed('timeline', true);
+
   canvas.append('g')
     .attr(
       'transform',
       `translate(-40,${canvas.attr('height') / 2}) rotate(270)`,
     ).append('text')
     .attr('text-anchor', 'middle')
-    .attr('font-size', "12px")
+    .attr('font-size', '12px')
     .text('price (USD)');
   zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, dataFiltered, eventData));
-  //console.log(xScale(limits.maxX));
-   /* svg.append('rect')
-      .attr('class', 'overlay')
-      .attr('width', width)
-      .attr('height', height)
-      .on('mouseover', () => focus.style('display', null))
-      .on('mouseout', () => focus.style('display', 'none'))
-   .on('mousemove', mousemove);*/
   zoom = d3.zoom().scaleExtent([1, 9]);
-	
+
   zoom.on('zoom', () => zoomed(gX, gY, dataFiltered, eventData));
-  
-  svg.on("mousemove", mousemove);
+
+  svg.on('mousemove', mousemove);
   svg.call(zoom);
-  RedrawY();
+  drawGridLines();
 };
-let mouselabel = null;
-let mouseline = null;
 
-var eventTooltip = d3.select("body").append("div")
-            .attr("class", "tooltip")
-            .style("opacity", 0);
-
-const mousemove= (e)=>{
-	let mousex = d3.mouse(svg.node())[0];
-	let x0 = currentX.invert(mousex- margin.left);
-	//console.log([x0,currentX.invert(0)]);
-	if(mouseline == null){
-		mouselabel = svg.append('text');
-		mouseline = svg.append('rect')
-			.attr('width','1')
-			.attr('height',height * 0.95)
-			
-		/*svg.on("mouseout", ()=>{
-			mouseline.style('fill','rgba(0,0,0,0.0)');
-		});*/
-		
-	}
-	let d = GetDataAtDate(x0);
-	let str = "$"+d.price.toFixed(2);
-	mouselabel.text(str);
-	var xpos = currentX(d.date)+margin.left;
-    
-    var pastDate = new Date(d.date);
-    var futureDate = new Date(d.date);
-    pastDate.setDate(pastDate.getDate() - 14);
-    futureDate.setDate(futureDate.getDate() + 14);
-    
-    for(event in eventData){
-        if(pastDate <= new Date(eventData[event]["Date"]) && futureDate >= new Date(eventData[event]["Date"])){
-            eventTooltip.style("opacity", .85);
-            eventTooltip.html(eventData[event]["Date"] + "<br/><b style='font-size: 16px;'>" + eventData[event]["Title"] + " </b><br/>" +
-                        eventData[event]["Description"] + "<br/>")
-            .style("left", (d3.event.pageX - 200) + "px")
-            .style("top", (canvasHeight + 170) + "px");
-            break;
-        }
-        else{
-            eventTooltip.style("opacity", 0);
-        }
-    }
-    
-	
-	if(xpos < margin.left || xpos>width-margin.right){
-		mouseline.style('fill','rgba(0,0,0,0.0)');
-	}else{
-		mouseline.style('fill','rgba(0,0,0,0.2)');
-	}
-	mouseline.attr('transform','translate('+ xpos+','+margin.top+')');
-	mouselabel.attr('transform','translate('+ xpos+','+(margin.top+40)+')');
-    
-    
-};
 $(document).ready(() => {
+  let loaded = 0;
   d3.csv('data/market-price.csv', (error, data) => {
-    globalData = data.map((d) => {
+    tickerData = data.map((d) => {
       const newd = _.clone(d);
       newd.date = new Date(newd.date);
       newd.price = parseFloat(newd.price);
       return newd;
     });
- d3.csv('data/events-timeline.csv', (error, data) => {
-    eventData = data.map((d) => {
-      const newe = _.clone(d);
-      newe.date = new Date(newe.date);
-      return newe;
-    
-    });
-    
-    initiateCanvas();
+    tickerData = _.sortBy(tickerData, ['date']);
+    loaded += 1;
 
-    bindArrowKeys();
+    if (loaded === 2) {
+      initiateCanvas();
+      bindArrowKeys();
+    }
+  });
+
+  d3.csv('data/events-timeline.csv', (error, data) => {
+    eventData = data.map((d, i) => {
+      const newe = _.clone(d);
+      newe.date = new Date(newe.Date);
+      newe.Date = undefined;
+      newe.id = `event-${i}`;
+      return newe;
     });
+    eventData = _.sortBy(eventData, ['Date']);
+    loaded += 1;
+
+    if (loaded === 2) {
+      initiateCanvas();
+      bindArrowKeys();
+    }
   });
 });
