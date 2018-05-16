@@ -35,6 +35,8 @@ let createLine;
 
 let keydownFired = 0;
 
+var k = 1;
+
 const bindArrowKeys = () => {
   $(document).keydown((e) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') {
@@ -96,6 +98,7 @@ const zoomed = (gX, gY) => {
   rescaleY(tickerData.btc);
   createLine.x(d => currentXScale(new Date(d.date)));
   createLine.y(d => yScale(d.price));
+    k = d3.event.transform.k;
   canvas.selectAll('path.line')
     .datum(tickerData.btc)
     .attr('d', createLine)
@@ -290,10 +293,32 @@ const initiateCanvas = () => {
     .attr('text-anchor', 'middle')
     .attr('font-size', '12px')
     .text('Price (USD)');
+    
+    
+    
+  
   zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, eventData));
   zoom = d3.zoom().scaleExtent([1, 9]);
 
   zoom.on('zoom', () => zoomed(gX, gY, eventData));
+  d3.select('#zoomIn')
+      .on("click", function () {
+        if(k <= 2){
+            zoom.scaleTo(svg, k + 0.1);
+        }
+        else{
+            zoom.scaleTo(svg, k + 0.5)
+        }
+    });
+ d3.select('#zoomOut')
+      .on("click", function () {
+        if(k <= 2){
+            zoom.scaleTo(svg, k - 0.1);
+        }
+        else{
+            zoom.scaleTo(svg, k - 0.5)
+        }
+    });    
 
   svg.on('mousemove', mousemove);
   svg.call(zoom);

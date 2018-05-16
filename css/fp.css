@@ -75,3 +75,14 @@ svg .axis>.tick>line {
 #event-box .title, #event-box .title>div {
   height: 30px;
 }
+
+.buttonBar{
+    padding-left: 17%;
+}
+#zoomIcon{
+    height: 24px;
+    width: 24px;
+}
+#zoomIn, #zoomOut{
+    height: 36px;
+}

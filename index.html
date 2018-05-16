@@ -16,13 +16,30 @@
   <link rel="stylesheet" href="css/materialdesignicons.min.css">
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/fp.css">
+    <style>
+    .buttonBar{
+        padding-left: 17%;
+        }
+    #zoomIcon{
+        height: 24px;
+        width: 24px;
+        }
+    #zoomIn, #zoomOut{
+        height: 36px;
+    }
+    </style>
 </head>
 
 <body>
   <div class="h-100">
     <nav class="navbar navbar-expand-lg">
       <a class="navbar-brand text-btc" href="javascript:void(0)"><i class="mdi mdi-bitcoin mdi-36px"></i></a>
+        <div class="buttonBar">
+            <button type="button" id="zoomOut"><img src="zoomOutIcon.png" id="zoomIcon" alt="Zoom Out"></button>
+            <button type="button" id="zoomIn"><img src="zoomInIcon.png" id="zoomIcon" alt="Zoom In"></button>
+        </div>
       <ul class="navbar-nav ml-auto">
+          
         <!-- <li class="navbar-text pr-1">
           <i class="mdi mdi-filter-outline mdi-24px"></i>
         </li>
