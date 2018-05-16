@@ -79,18 +79,22 @@
     <div class="modal-dialog modal-dialog-centered" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">About</h5>
+          <h5 class="modal-title">Bitcoin Visual Timeline</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="font-size:0.9em">
           <p>
             The goal of our visualization is to provide a comprehensive and accessible history of both Bitcoin’s value and the events that shaped it. By providing a combination of significant events (milestones, booms, crashes) with price data, users should be able
             to contextualize these two metrics, and understand their relationship to each other.
 			<!-- Our visualization should ultimately allow one to come away with a much more informed understanding of the cryptocurrency history, and perhaps even it’s future. -->
           <br>
-			Hover over the graph to see 
+          <br>
+          Hover over the graph to see the date and price. The timeline underneath the graph represents events in Bitcoin’s history. Click on events to learn more about them!
+          <Br>
+          <Br>
+          You can also zoom-in by using the mouse wheel or the zoom buttons on the top left. You can pan the graph by clicking and dragging or by using the arrow keys. Hovering over the line will show more details, and clicking on the line will lock the details window.
 		  
 		  </p>
         </div>
@@ -110,6 +114,11 @@
   <script src="js/lodash.min.js"></script>
   <script src="js/moment.min.js"></script>
   <script src="js/fp.js"></script>
+  <script>
+     $(window).on('load',function(){
+        $('#about').modal('show');
+    });
+  </script>
 </body>
 
 </html>
