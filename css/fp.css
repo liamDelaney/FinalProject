@@ -1,16 +1,39 @@
 body {
     overflow: hidden;
 }
-
+.jqueryline{
+  
+  transition: borderColor 0.4s ease;
+}
+#floatbox h3{
+  font-size: 1.2em;
+}
 #floatbox{
   position:absolute;
   background-color: rgba(255,255,255,1);
-  width: 250px;
-  height: 100px;
+  width: 150px;
+  height: 115px;
+  font-size: 0.8em;
+  padding-left: 12px;
+  padding-top: 12px;
   border: 2px solid rgba(0,0,0,0.1);
   transform:translate(0px,0px) scale(0,0);
   transition: transform 0.2s ease;
   pointer-events: none;
+}
+#floatboxline{
+  stroke: rgba(0,0,0,0.2);
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+  transition: stroke-width 0.2s ease;
+}
+#floatbox.open{
+  
+  transform:translate(20px,-140px) scale(1,1);
+  transition: transform 0.2s ease;
+  
 }
 .text-btc {
   color: #FAB915;
@@ -42,7 +65,7 @@ svg path.line2 {
   fill: none;
   stroke-linejoin: round;
   stroke-linecap: round;
-  stroke-width: 17.5;
+  stroke-width: 25.5;
   //cursor: pointer;
   cursor: crosshair;
   transition: opacity 0.2s ease;

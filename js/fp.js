@@ -116,6 +116,7 @@ const zoomed = (gX, gY) => {
     .data(eventData)
     .attr('cx', d => currentXScale(new Date(d.date)));
   mousemove();
+  closeFloatbox();
  // svg.on('mousemove', mousemove);
 };
 
@@ -127,29 +128,59 @@ const findData = (ticker, date) => {
   }
   return tickerData[ticker][tickerData[ticker].length - 1];
 };
-
+let floatboxlocked = false;
 const openFloatbox = (e,d)=>{
-  
-  if(floatbox == null){
-    d3.select('body').append('div')
-      .attr('id','floatbox');
-    floatbox = d3.select('#floatbox');
-  }
-  
-  floatbox.style('transform','translate(0px,0px) scale(0,0)');
+  floatbox.classed('open',true);
+  /*floatbox.style('transform','translate(0px,0px) scale(0,0)');
   floatbox.style('transition','transform 0.2s ease;');
-  floatbox.style('transform','translate(0px,0px) scale(1,1)');
-  floatbox.style('opacity','1');
+  floatbox.style('transform','translate(0px,0px) scale(1,1)');*.
+  floatbox.style('opacity','1');*/
 }
 const closeFloatbox = (e,d)=>{
-  
-  floatbox.style('opacity','0');
+  if(floatboxlocked){
+    floatbox.classed('open',true);
+  }else{
+    floatbox.classed('open',false);
+  }
+  //floatbox.style('opacity','0');
 }
+let floatboxline = null;
 const updateFloatbox = (e,d)=>{
+  if(!floatbox.classed('open')){
+    return;
+  }
   const mousex = d3.mouse(d3.select('body').node())[0];
   const mousey = d3.mouse(d3.select('body').node())[1];
+  /*$('.jqueryline').remove();
+  $('body').line(mousex,mousey,$('#floatbox').position().left+10,$('#floatbox').position().top+40);
+  $('.jqueryline').css('pointer-events','none')
+    .css('z-index','-100')
+    .css('borderWidth','2px')
+    .css('borderColor','rgba(0,0,0,0.1)')
+   ;*/
   floatbox.style('left',mousex+'px');
   floatbox.style('top',mousey+'px');
+  let btc = findData('btc', lastdate).price.toFixed(2);
+  let ethd = findData('eth', lastdate);
+  let eth = ethd.price.toFixed(2);
+  if(Math.abs(ethd.date - lastdate)> 80000000){
+    eth = "N/A";
+  }
+  let ltcd = findData('ltc', lastdate);
+  let ltc = ltcd.price.toFixed(2);
+  
+  if(Math.abs(ltcd.date - lastdate)> 80000000){
+    ltc = "N/A";
+  }
+  floatbox.html(
+  
+  '<h3>'+moment(lastdate).format('MMM DD, YYYY')+'</h3>'
+  +'<div style="magin:0 0 0 0; padding-top:0; padding-Left : 3px;">'
+  +'Bitcoin: $' + btc +'<br>'
+  +'Ethereum: $' + eth +'<br>'
+  +'Litecoin: $' + ltc+'<br>'
+  +'</div>'
+  )
 };
 let lastdate = null;
 const mousemove = () => {
@@ -216,7 +247,7 @@ const mousemove = () => {
     $('.dot').removeClass('active');
   if (mouseEvent !== null) {
     $('#event-box>.date').text(moment(mouseEvent.date).format('MMM DD, YYYY'));
-
+    lastdate = mouseEvent.date;
     $('svg .vertical-line')
       .addClass('active-event')
       .removeClass('active');
@@ -235,20 +266,26 @@ const mousemove = () => {
         <i class="ml-1 mdi mdi-24px mdi-${trendClassName}"></i>
       </div>`);
     $('#event-box>.summary').text(mouseEvent.Description);
-    $('#event-box>.title').fadeIn(200);
-    $('#event-box>.summary').fadeIn(200);
-    $('#event-box>.date').fadeIn(200);
+    $('#event-box>.title').fadeIn(250);
+    $('#event-box>.summary').fadeIn(250);
+    $('#event-box>.date').fadeIn(250);
   } else {
     $('#event-box>.date').text(moment(d.date).format('MMM DD, YYYY'));
 
     $('svg .vertical-line')
       .addClass('active')
       .removeClass('active-event');
-    $('#event-box>.title').hide();
-    $('#event-box>.summary').hide();
+    $('#event-box>.title').stop(true,true);
+    $('#event-box>.summary').stop(true,true);
+    $('#event-box>.title').fadeOut(100);
+    $('#event-box>.summary').fadeOut(100);
+    //$('#event-box>.title').hide();
+    //$('#event-box>.summary').hide();
     //$('#event-box>.title').fadeOut(100);
     //$('#event-box>.summary').fadeOut(100);
+    
   }
+  updateFloatbox();
 };
 const hideLine = (hideDate) =>{
   
@@ -377,6 +414,8 @@ const initiateCanvas = () => {
     .style('stroke-width', 25)
     .style('stroke',"#FFF");
     
+  floatbox = d3.select('body').append('div')
+    .attr('id','floatbox');
   zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, eventData));
   zoom = d3.zoom().scaleExtent([1, 9]);
 
@@ -400,6 +439,12 @@ const initiateCanvas = () => {
         }
     });    
 
+  canvas.selectAll('path.line2').on('click',()=>{
+     openFloatbox();
+    floatboxlocked = !floatboxlocked;
+    d3.event.stopPropagation(); 
+    
+  });
   canvas.selectAll('path.line2').on('mouseover',
     ()=>{
       canvas.selectAll('path.line2')
@@ -418,7 +463,18 @@ const initiateCanvas = () => {
       closeFloatbox();
     }
   );
-  canvas.selectAll('path.line2').on('mousemove',updateFloatbox);
+  svg.on('click',()=>{
+    if(floatboxlocked){
+      floatboxlocked = false;
+     closeFloatbox();
+    }
+  });
+  canvas.selectAll('path.line2').on('mousemove',
+    ()=>{
+      openFloatbox();
+      updateFloatbox()
+    }
+  );
   //canvas.selectAll('path.line2').on('click',clicked);
   svg.on('mousemove', mousemove);
   svg.call(zoom);
