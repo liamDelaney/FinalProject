@@ -397,7 +397,7 @@ const initiateCanvas = () => {
     .data(eventData)
     .enter()
     .append('a')
-    .attr('xlink:href', d => d.Link)
+    .attr('onclick', d => ("window.open('"+d.Link+"', '_blank')"))
     .append('circle')
     .attr('id', d => d.id)
     .attr('class', 'dot')
