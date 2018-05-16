@@ -12,7 +12,7 @@ const dotRadius = 5; // normal circle size
 const dotFocusedRadius = 7; // enlarged circle size
 const timelineHeight = 2 * dotRadius;
 const vlineTextTop = 40; // vertical line label's top margin
-const vlineTextOffset = 20; // vertical line label's top offset
+// const vlineTextOffset = 20; // vertical line label's top offset
 let floatbox = null;
 let width;
 let height;
@@ -35,7 +35,19 @@ let createLine;
 
 let keydownFired = 0;
 
-var k = 1;
+let kTransform = 1;
+
+const hideLine = (hideDate) => {
+  canvas.selectAll('.vertical-line-text').remove();
+  canvas.select('.vertical-line')
+    .attr('opacity', '0');
+  if (hideDate) {
+    $('.dot').removeClass('active');
+    $('#event-box>.date').hide();
+    $('#event-box>.title').hide();
+    $('#event-box>.summary').hide();
+  }
+};
 
 const bindArrowKeys = () => {
   $(document).keydown((e) => {
@@ -44,7 +56,7 @@ const bindArrowKeys = () => {
     }
 
     let dis = e.key === 'ArrowLeft' ? 100 : -100;
-    dis /= k;
+    dis /= kTransform;
     if (keydownFired === 0) {
       svg.transition()
         .duration(200)
@@ -59,7 +71,6 @@ const bindArrowKeys = () => {
       keydownFired = new Date().getTime();
     }
     hideLine(true);
-    
   });
 
   $(document).keyup(() => {
@@ -91,35 +102,6 @@ const rescaleY = () => {
     .range([0, height]);
 };
 
-const zoomed = (gX, gY) => {
-  const { transform } = d3.event;
-  transform.x = Math.min(0, Math.max(transform.x, width * (1 - transform.k)));
-  zoom.transform.x = transform.x;
-  gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
-  currentXScale = d3.event.transform.rescaleX(xScale);
-  gY.call(yAxis.scale(yScale));
-  rescaleY(tickerData.btc);
-  createLine.x(d => currentXScale(new Date(d.date)));
-  createLine.y(d => yScale(d.price));
-   k = d3.event.transform.k;
-   
-  canvas.selectAll('path.line')
-    .datum(tickerData.btc)
-    .attr('d', createLine)
-    .attr('clip-path', 'url(#clip)');
-  canvas.selectAll('path.line2')
-    .datum(tickerData.btc)
-    .attr('d', createLine)
-    .attr('clip-path', 'url(#clip)');
-  drawGridLines();
-  canvas.selectAll('.dot')
-    .data(eventData)
-    .attr('cx', d => currentXScale(new Date(d.date)));
-  mousemove();
-  closeFloatbox();
- // svg.on('mousemove', mousemove);
-};
-
 const findData = (ticker, date) => {
   for (let i = 0; i < tickerData[ticker].length; i += 1) {
     if (date < tickerData[ticker][i].date) {
@@ -128,69 +110,47 @@ const findData = (ticker, date) => {
   }
   return tickerData[ticker][tickerData[ticker].length - 1];
 };
+
 let floatboxlocked = false;
-const openFloatbox = (e,d)=>{
-  floatbox.classed('open',true);
-  /*floatbox.style('transform','translate(0px,0px) scale(0,0)');
-  floatbox.style('transition','transform 0.2s ease;');
-  floatbox.style('transform','translate(0px,0px) scale(1,1)');*.
-  floatbox.style('opacity','1');*/
-}
-const closeFloatbox = (e,d)=>{
-  if(floatboxlocked){
-    floatbox.classed('open',true);
-  }else{
-    floatbox.classed('open',false);
-  }
-  //floatbox.style('opacity','0');
-}
-let floatboxline = null;
-const updateFloatbox = (e,d)=>{
-  if(!floatbox.classed('open')){
+const openFloatbox = () => {
+  floatbox.classed('open', true);
+};
+const closeFloatbox = () => {
+  floatbox.classed('open', floatboxlocked);
+};
+
+let lastdate = null;
+
+const updateFloatbox = () => {
+  if (!floatbox.classed('open')) {
     return;
   }
   const mousex = d3.mouse(d3.select('body').node())[0];
   const mousey = d3.mouse(d3.select('body').node())[1];
-  /*$('.jqueryline').remove();
-  $('body').line(mousex,mousey,$('#floatbox').position().left+10,$('#floatbox').position().top+40);
-  $('.jqueryline').css('pointer-events','none')
-    .css('z-index','-100')
-    .css('borderWidth','2px')
-    .css('borderColor','rgba(0,0,0,0.1)')
-   ;*/
-  floatbox.style('left',mousex+'px');
-  floatbox.style('top',mousey+'px');
-  let btc = findData('btc', lastdate).price.toFixed(2);
-  let ethd = findData('eth', lastdate);
-  let eth = ethd.price.toFixed(2);
-  if(Math.abs(ethd.date - lastdate)> 80000000){
-    eth = "N/A";
-  }
-  let ltcd = findData('ltc', lastdate);
-  let ltc = ltcd.price.toFixed(2);
-  
-  if(Math.abs(ltcd.date - lastdate)> 80000000){
-    ltc = "N/A";
-  }
-  floatbox.html(
-  
-  '<h3>'+moment(lastdate).format('MMM DD, YYYY')+'</h3>'
-  +'<div style="magin:0 0 0 0; padding-top:0; padding-Left : 3px;">'
-  +'Bitcoin: $' + btc +'<br>'
-  +'Ethereum: $' + eth +'<br>'
-  +'Litecoin: $' + ltc+'<br>'
-  +'</div>'
-  )
+
+  floatbox.style('left', `${mousex}px`);
+  floatbox.style('top', `${mousey}px`);
+  const btc = findData('btc', lastdate).price.toFixed(2);
+  let eth = findData('eth', lastdate);
+  let ltc = findData('ltc', lastdate);
+  eth = Math.abs(eth.date - lastdate) > 8e7 ? 'N/A' : eth.price.toFixed(2);
+  ltc = Math.abs(ltc.date - lastdate) > 8e7 ? 'N/A' : ltc.price.toFixed(2);
+
+  floatbox.html(`
+    <h3>${moment(lastdate).format('MMM DD, YYYY')}</h3>
+      <div class="m-0 pt-0 pl-1">
+      <div>Bitcoin: $ ${btc}</div>
+      <div>Ethereum: $ ${eth}</div>
+      <div>Litecoin: $ ${ltc}</div>
+    </div>`);
 };
-let lastdate = null;
+
 const mousemove = () => {
-  mousestable = false;
   const mousex = d3.mouse(canvas.node())[0];
   const mouseDate = currentXScale.invert(mousex);
   canvas.selectAll('.vertical-line-text').remove();
   canvas.select('.vertical-line')
     .attr('opacity', '0');
-  //canvas.selectAll('.vertical-line').remove();
 
   let d = findData('btc', mouseDate);
   if (d === null) {
@@ -203,34 +163,23 @@ const mousemove = () => {
       eventData[i].date <= currentXScale.invert(mousex + dotFocusedRadius)) {
       mouseEvent = eventData[i];
       fxpos = currentXScale(mouseEvent.date);
-      let d2 = findData('btc', mouseEvent.date)
-      if(d2 != null){
-        d = d2;
-      }
+      const d2 = findData('btc', mouseEvent.date);
+      d = d2 != null ? d2 : d;
       break;
     }
   }
-  if(fxpos === null){
+  if (fxpos === null) {
     fxpos = currentXScale(d.date);
   }
-  
+
   if (fxpos === null || fxpos < 0 || fxpos > width) {
     return;
   }
   canvas.append('text')
     .attr('class', 'vertical-line-text small text-btc')
     .text(` $${d.price.toFixed(2)}`)
-    .attr('transform', `translate(${fxpos + 5}, ${vlineTextTop+8})`);
-  /*canvas.append('text')
-    .attr('class', 'vertical-line-text small text-eth')
-    .text(`1 ETH = $${findData('eth', d.date).price}`)
-    .attr('transform', `translate(${fxpos + 5}, ${vlineTextTop + vlineTextOffset})`);
-  canvas.append('text')
-    .attr('class', 'vertical-line-text small text-ltc')
-    .text(`1 LTC = $${findData('ltc', d.date).price}`)
-    .attr('transform', `translate(${fxpos + 5}, ${vlineTextTop + vlineTextOffset + vlineTextOffset})`);
-  */
-  
+    .attr('transform', `translate(${fxpos + 5}, ${vlineTextTop + 8})`);
+
   canvas.select('.vertical-line')
     .attr('x1', fxpos)
     .attr('y1', 0)
@@ -244,7 +193,7 @@ const mousemove = () => {
   const verticalLineLeft = $('.vertical-line').position().left;
   $('#event-box').css('left', `${verticalLineLeft - 200}px`);
 
-    $('.dot').removeClass('active');
+  $('.dot').removeClass('active');
   if (mouseEvent !== null) {
     $('#event-box>.date').text(moment(mouseEvent.date).format('MMM DD, YYYY'));
     lastdate = mouseEvent.date;
@@ -275,30 +224,42 @@ const mousemove = () => {
     $('svg .vertical-line')
       .addClass('active')
       .removeClass('active-event');
-    $('#event-box>.title').stop(true,true);
-    $('#event-box>.summary').stop(true,true);
+    $('#event-box>.title').stop(true, true);
+    $('#event-box>.summary').stop(true, true);
     $('#event-box>.title').fadeOut(100);
     $('#event-box>.summary').fadeOut(100);
-    //$('#event-box>.title').hide();
-    //$('#event-box>.summary').hide();
-    //$('#event-box>.title').fadeOut(100);
-    //$('#event-box>.summary').fadeOut(100);
-    
   }
   updateFloatbox();
 };
-const hideLine = (hideDate) =>{
-  
-  canvas.selectAll('.vertical-line-text').remove();
-  canvas.select('.vertical-line')
-    .attr('opacity', '0');
-  if(hideDate){
-    $('.dot').removeClass('active');
-    $('#event-box>.date').hide();
-    $('#event-box>.title').hide();
-    $('#event-box>.summary').hide();
-  }
-}
+
+const zoomed = (gX, gY) => {
+  const { transform } = d3.event;
+  transform.x = Math.min(0, Math.max(transform.x, width * (1 - transform.k)));
+  zoom.transform.x = transform.x;
+  gX.call(xAxis.scale(d3.event.transform.rescaleX(xScale)));
+  currentXScale = d3.event.transform.rescaleX(xScale);
+  gY.call(yAxis.scale(yScale));
+  rescaleY(tickerData.btc);
+  createLine.x(d => currentXScale(new Date(d.date)));
+  createLine.y(d => yScale(d.price));
+  kTransform = d3.event.transform.k;
+
+  canvas.selectAll('path.line')
+    .datum(tickerData.btc)
+    .attr('d', createLine)
+    .attr('clip-path', 'url(#clip)');
+  canvas.selectAll('path.line2')
+    .datum(tickerData.btc)
+    .attr('d', createLine)
+    .attr('clip-path', 'url(#clip)');
+  drawGridLines();
+  canvas.selectAll('.dot')
+    .data(eventData)
+    .attr('cx', d => currentXScale(new Date(d.date)));
+  mousemove();
+  closeFloatbox();
+};
+
 const initiateCanvas = () => {
   svg = d3.select('#chart-container>svg');
   svg.selectAll('*').remove();
@@ -376,12 +337,12 @@ const initiateCanvas = () => {
     .attr('x2', width)
     .attr('y2', height + timelineTop + timelineHeight)
     .classed('timeline', true);
-    
+
   canvas.append('line')
     .classed('vertical-line', true)
     .attr('width', '1')
     .attr('opacity', '0');
-  
+
   canvas.append('g')
     .attr(
       'transform',
@@ -390,21 +351,21 @@ const initiateCanvas = () => {
     .attr('text-anchor', 'middle')
     .attr('font-size', '12px')
     .text('Price (USD)');
-    
-    
+
+
   canvas.append('g')
     .selectAll('dot')
     .data(eventData)
     .enter()
     .append('a')
-    .attr('onclick', d => ("window.open('"+d.Link+"', '_blank')"))
+    .attr('onclick', d => (`window.open('${d.Link}', '_blank')`))
     .append('circle')
     .attr('id', d => d.id)
     .attr('class', 'dot')
     .attr('r', 5)
     .attr('cx', d => xScale(new Date(d.date)))
     .attr('cy', height + timelineTop + dotRadius);
-    
+
   canvas.append('line')
     .attr('x1', -100)
     .attr('y1', height + timelineTop + dotRadius)
@@ -412,70 +373,54 @@ const initiateCanvas = () => {
     .attr('y2', height + timelineTop + dotRadius)
     .attr('width', 5)
     .style('stroke-width', 25)
-    .style('stroke',"#FFF");
-    
+    .style('stroke', 'white');
+
   floatbox = d3.select('body').append('div')
-    .attr('id','floatbox');
+    .attr('id', 'floatbox');
   zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, eventData));
   zoom = d3.zoom().scaleExtent([1, 9]);
 
   zoom.on('zoom', () => zoomed(gX, gY, eventData));
-  d3.select('#zoomIn')
-      .on("click", function () {
-        if(k <= 2){
-            zoom.scaleTo(svg, k + 0.1);
-        }
-        else{
-            zoom.scaleTo(svg, k + 0.5)
-        }
-    });
- d3.select('#zoomOut')
-      .on("click", function () {
-        if(k <= 2){
-            zoom.scaleTo(svg, k - 0.1);
-        }
-        else{
-            zoom.scaleTo(svg, k - 0.5)
-        }
-    });    
-
-  canvas.selectAll('path.line2').on('click',()=>{
-     openFloatbox();
-    floatboxlocked = !floatboxlocked;
-    d3.event.stopPropagation(); 
-    
+  d3.select('#zoomIn').on('click', () => {
+    zoom.scaleTo(svg, kTransform + (kTransform <= 2 ? 0.1 : 0.5));
   });
-  canvas.selectAll('path.line2').on('mouseover',
-    ()=>{
-      canvas.selectAll('path.line2')
-        .style('opacity','0.1');
-      canvas.selectAll('path.line')
-        .style('stroke-width','2');
-      openFloatbox();
-    }
-  );
-  canvas.selectAll('path.line2').on('mouseout',
-    ()=>{
-      canvas.selectAll('path.line2')
-        .style('opacity','0');
-      canvas.selectAll('path.line')
-        .style('stroke-width','1');
+  d3.select('#zoomOut')
+    .on('click', () => zoom.scaleTo(svg, kTransform - (kTransform <= 2 ? 0.1 : 0.5)));
+
+
+  canvas.selectAll('path.line2').on('click', () => {
+    openFloatbox();
+    floatboxlocked = !floatboxlocked;
+    d3.event.stopPropagation();
+  });
+
+  canvas.selectAll('path.line2').on('mouseover', () => {
+    canvas.selectAll('path.line2')
+      .style('opacity', '0.1');
+    canvas.selectAll('path.line')
+      .style('stroke-width', '2');
+    openFloatbox();
+  });
+
+  canvas.selectAll('path.line2').on('mouseout', () => {
+    canvas.selectAll('path.line2')
+      .style('opacity', '0');
+    canvas.selectAll('path.line')
+      .style('stroke-width', '1');
+    closeFloatbox();
+  });
+
+  svg.on('click', () => {
+    if (floatboxlocked) {
+      floatboxlocked = false;
       closeFloatbox();
     }
-  );
-  svg.on('click',()=>{
-    if(floatboxlocked){
-      floatboxlocked = false;
-     closeFloatbox();
-    }
   });
-  canvas.selectAll('path.line2').on('mousemove',
-    ()=>{
-      openFloatbox();
-      updateFloatbox()
-    }
-  );
-  //canvas.selectAll('path.line2').on('click',clicked);
+  canvas.selectAll('path.line2').on('mousemove', () => {
+    openFloatbox();
+    updateFloatbox();
+  });
+
   svg.on('mousemove', mousemove);
   svg.call(zoom);
   drawGridLines();

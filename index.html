@@ -16,38 +16,25 @@
   <link rel="stylesheet" href="css/materialdesignicons.min.css">
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/fp.css">
-    <style>
-    .buttonBar{
-        padding-left: 17%;
-        }
-    #zoomIcon{
-        height: 24px;
-        width: 24px;
-        }
-    #zoomIn, #zoomOut{
-        height: 36px;
-    }
-    </style>
 </head>
 
 <body>
   <div class="h-100">
     <nav class="navbar navbar-expand-lg">
       <a class="navbar-brand text-btc" href="javascript:void(0)"><i class="mdi mdi-bitcoin mdi-36px"></i></a>
-        <div class="buttonBar">
-            <button type="button" id="zoomOut"><img src="zoomOutIcon.png" id="zoomIcon" alt="Zoom Out"></button>
-            <button type="button" id="zoomIn"><img src="zoomInIcon.png" id="zoomIcon" alt="Zoom In"></button>
-        </div>
       <ul class="navbar-nav ml-auto">
-          
-        <!-- <li class="navbar-text pr-1">
-          <i class="mdi mdi-filter-outline mdi-24px"></i>
+        <li class="nav-item">
+          <a class="nav-link text-btc" href="javascript:void(0)" id="zoomOut">
+            <i class="mdi mdi-magnify-minus mdi-24px"></i>
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="javascript:void(0)">
-            <i class="mdi mdi-filter mdi-24px"></i>
+          <a class="nav-link text-btc" href="javascript:void(0)" id="zoomIn">
+            <i class="mdi mdi-magnify-plus mdi-24px"></i>
           </a>
-        </li> -->
+        </li>
+      </ul>
+      <ul class="navbar-nav ml-auto">
         <li class="nav-item">
           <a class="nav-link text-btc" href="javascript:void(0)" data-toggle="modal" data-target="#about">
             <i class="mdi mdi-help-circle-outline mdi-24px"></i>
@@ -88,15 +75,14 @@
           <p>
             The goal of our visualization is to provide a comprehensive and accessible history of both Bitcoin’s value and the events that shaped it. By providing a combination of significant events (milestones, booms, crashes) with price data, users should be able
             to contextualize these two metrics, and understand their relationship to each other.
-			<!-- Our visualization should ultimately allow one to come away with a much more informed understanding of the cryptocurrency history, and perhaps even it’s future. -->
-          <br>
-          <br>
-          Hover over the graph to see the date and price. The timeline underneath the graph represents events in Bitcoin’s history. Click on events to learn more about them!
-          <Br>
-          <Br>
-          You can also zoom-in by using the mouse wheel or the zoom buttons on the top left. You can pan the graph by clicking and dragging or by using the arrow keys. Hovering over the line will show more details, and clicking on the line will lock the details window.
-		  
-		  </p>
+            <!-- Our visualization should ultimately allow one to come away with a much more informed understanding of the cryptocurrency history, and perhaps even it’s future. -->
+            <br>
+            <br> Hover over the graph to see the date and price. The timeline underneath the graph represents events in Bitcoin’s history. Click on events to learn more about them!
+            <Br>
+            <Br> You can also zoom-in by using the mouse wheel or the zoom buttons on the top left. You can pan the graph by clicking and dragging or by using the arrow keys. Hovering over the line will show more details, and clicking on the line will lock
+            the details window.
+
+          </p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -108,15 +94,14 @@
   <script src="js/d3.min.js"></script>
   <script src="js/d3-scale-chromatic.min.js"></script>
   <script src="js/jquery.min.js"></script>
-  <!-- Jquery Line tool taken from https://github.com/tbem/jquery.line-->
-  <script src="js/jquery.line.js"></script>
+  <script src="js/jquery.line.min.js"></script>
   <script src="js/bootstrap.bundle.min.js"></script>
   <script src="js/lodash.min.js"></script>
   <script src="js/moment.min.js"></script>
   <script src="js/fp.js"></script>
   <script>
-     $(window).on('load',function(){
-        $('#about').modal('show');
+    $(window).on('load', function() {
+      $('#about').modal('show');
     });
   </script>
 </body>
