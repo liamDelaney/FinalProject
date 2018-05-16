@@ -2,6 +2,16 @@ body {
     overflow: hidden;
 }
 
+#floatbox{
+  position:absolute;
+  background-color: rgba(255,255,255,1);
+  width: 250px;
+  height: 100px;
+  border: 2px solid rgba(0,0,0,0.1);
+  transform:translate(0px,0px) scale(0,0);
+  transition: transform 0.2s ease;
+  pointer-events: none;
+}
 .text-btc {
   color: #FAB915;
   fill: #FAB915;
@@ -23,6 +33,20 @@ svg path.line {
   stroke-linejoin: round;
   stroke-linecap: round;
   stroke-width: 1.5;
+  transition: stroke-width 0.2s ease;
+}
+
+svg path.line2 {
+  stroke: #FAB915;
+  opacity:0.0;
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-width: 17.5;
+  //cursor: pointer;
+  cursor: crosshair;
+  transition: opacity 0.2s ease;
+  
 }
 
 svg .dot {
@@ -31,10 +55,12 @@ svg .dot {
   stroke-width: 1px;
   cursor: pointer;
   fill: #fff;
+  r: 5;
+  transition: r 0.2s ease;
 }
 
 svg .dot:hover {
-  fill: #FAB91555;
+  fill: #fdeab8;
 }
 
 svg line.timeline {
@@ -44,6 +70,7 @@ svg line.timeline {
 
 svg .vertical-line {
   stroke: none;
+  pointer-events: none;
 }
 
 svg .vertical-line.active {

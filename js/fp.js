@@ -9,11 +9,11 @@ const margin = {
 
 const timelineTop = 40; // timeline's distance from x-axis
 const dotRadius = 5; // normal circle size
-const dotFocusedRadius = 10; // enlarged circle size
+const dotFocusedRadius = 7; // enlarged circle size
 const timelineHeight = 2 * dotRadius;
 const vlineTextTop = 40; // vertical line label's top margin
 const vlineTextOffset = 20; // vertical line label's top offset
-
+let floatbox = null;
 let width;
 let height;
 let xScale = null;
@@ -43,7 +43,8 @@ const bindArrowKeys = () => {
       return;
     }
 
-    const dis = e.key === 'ArrowLeft' ? 100 : -100;
+    let dis = e.key === 'ArrowLeft' ? 100 : -100;
+    dis /= k;
     if (keydownFired === 0) {
       svg.transition()
         .duration(200)
@@ -51,12 +52,14 @@ const bindArrowKeys = () => {
         .call(zoom.translateBy, dis, 0);
     } else if (new Date().getTime() - 400 > keydownFired) {
       // wait for 2x the transition time to start continuous scrolling
-      zoom.translateBy(svg, dis / 20, 0);
+      zoom.translateBy(svg, dis / 5, 0);
     }
 
     if (keydownFired === 0) {
       keydownFired = new Date().getTime();
     }
+    hideLine(true);
+    
   });
 
   $(document).keyup(() => {
@@ -98,8 +101,13 @@ const zoomed = (gX, gY) => {
   rescaleY(tickerData.btc);
   createLine.x(d => currentXScale(new Date(d.date)));
   createLine.y(d => yScale(d.price));
-    k = d3.event.transform.k;
+   k = d3.event.transform.k;
+   
   canvas.selectAll('path.line')
+    .datum(tickerData.btc)
+    .attr('d', createLine)
+    .attr('clip-path', 'url(#clip)');
+  canvas.selectAll('path.line2')
     .datum(tickerData.btc)
     .attr('d', createLine)
     .attr('clip-path', 'url(#clip)');
@@ -107,6 +115,8 @@ const zoomed = (gX, gY) => {
   canvas.selectAll('.dot')
     .data(eventData)
     .attr('cx', d => currentXScale(new Date(d.date)));
+  mousemove();
+ // svg.on('mousemove', mousemove);
 };
 
 const findData = (ticker, date) => {
@@ -118,54 +128,92 @@ const findData = (ticker, date) => {
   return tickerData[ticker][tickerData[ticker].length - 1];
 };
 
+const openFloatbox = (e,d)=>{
+  
+  if(floatbox == null){
+    d3.select('body').append('div')
+      .attr('id','floatbox');
+    floatbox = d3.select('#floatbox');
+  }
+  
+  floatbox.style('transform','translate(0px,0px) scale(0,0)');
+  floatbox.style('transition','transform 0.2s ease;');
+  floatbox.style('transform','translate(0px,0px) scale(1,1)');
+  floatbox.style('opacity','1');
+}
+const closeFloatbox = (e,d)=>{
+  
+  floatbox.style('opacity','0');
+}
+const updateFloatbox = (e,d)=>{
+  const mousex = d3.mouse(d3.select('body').node())[0];
+  const mousey = d3.mouse(d3.select('body').node())[1];
+  floatbox.style('left',mousex+'px');
+  floatbox.style('top',mousey+'px');
+};
+let lastdate = null;
 const mousemove = () => {
+  mousestable = false;
   const mousex = d3.mouse(canvas.node())[0];
   const mouseDate = currentXScale.invert(mousex);
   canvas.selectAll('.vertical-line-text').remove();
-  canvas.selectAll('.vertical-line').remove();
+  canvas.select('.vertical-line')
+    .attr('opacity', '0');
+  //canvas.selectAll('.vertical-line').remove();
 
-  const d = findData('btc', mouseDate);
+  let d = findData('btc', mouseDate);
   if (d === null) {
     return;
   }
-  const xpos = currentXScale(d.date);
-  if (xpos < 0 || xpos > width) {
-    return;
-  }
-
-  canvas.append('text')
-    .attr('class', 'vertical-line-text small text-btc')
-    .text(`1 BTC = $${d.price.toFixed(2)}`)
-    .attr('transform', `translate(${xpos + 5}, ${vlineTextTop})`);
-  canvas.append('text')
-    .attr('class', 'vertical-line-text small text-eth')
-    .text(`1 ETH = $${findData('eth', d.date).price}`)
-    .attr('transform', `translate(${xpos + 5}, ${vlineTextTop + vlineTextOffset})`);
-  canvas.append('text')
-    .attr('class', 'vertical-line-text small text-ltc')
-    .text(`1 LTC = $${findData('ltc', d.date).price}`)
-    .attr('transform', `translate(${xpos + 5}, ${vlineTextTop + vlineTextOffset + vlineTextOffset})`);
-  canvas.append('line')
-    .classed('vertical-line', true)
-    .attr('width', '1')
-    .attr('x1', xpos)
-    .attr('y1', 0)
-    .attr('x2', xpos)
-    .attr('y2', height + timelineTop);
-
+  let fxpos = null;
   let mouseEvent = null;
   for (let i = 0; i < eventData.length; i += 1) {
     if (eventData[i].date >= currentXScale.invert(mousex - dotFocusedRadius) &&
       eventData[i].date <= currentXScale.invert(mousex + dotFocusedRadius)) {
       mouseEvent = eventData[i];
+      fxpos = currentXScale(mouseEvent.date);
+      let d2 = findData('btc', mouseEvent.date)
+      if(d2 != null){
+        d = d2;
+      }
       break;
     }
   }
+  if(fxpos === null){
+    fxpos = currentXScale(d.date);
+  }
+  
+  if (fxpos === null || fxpos < 0 || fxpos > width) {
+    return;
+  }
+  canvas.append('text')
+    .attr('class', 'vertical-line-text small text-btc')
+    .text(` $${d.price.toFixed(2)}`)
+    .attr('transform', `translate(${fxpos + 5}, ${vlineTextTop+8})`);
+  /*canvas.append('text')
+    .attr('class', 'vertical-line-text small text-eth')
+    .text(`1 ETH = $${findData('eth', d.date).price}`)
+    .attr('transform', `translate(${fxpos + 5}, ${vlineTextTop + vlineTextOffset})`);
+  canvas.append('text')
+    .attr('class', 'vertical-line-text small text-ltc')
+    .text(`1 LTC = $${findData('ltc', d.date).price}`)
+    .attr('transform', `translate(${fxpos + 5}, ${vlineTextTop + vlineTextOffset + vlineTextOffset})`);
+  */
+  
+  canvas.select('.vertical-line')
+    .attr('x1', fxpos)
+    .attr('y1', 0)
+    .attr('x2', fxpos)
+    .attr('y2', height + timelineTop)
+    .attr('opacity', '1');
 
+
+  lastdate = d.date;
 
   const verticalLineLeft = $('.vertical-line').position().left;
   $('#event-box').css('left', `${verticalLineLeft - 200}px`);
 
+    $('.dot').removeClass('active');
   if (mouseEvent !== null) {
     $('#event-box>.date').text(moment(mouseEvent.date).format('MMM DD, YYYY'));
 
@@ -187,20 +235,33 @@ const mousemove = () => {
         <i class="ml-1 mdi mdi-24px mdi-${trendClassName}"></i>
       </div>`);
     $('#event-box>.summary').text(mouseEvent.Description);
-    $('#event-box>.title').fadeIn();
-    $('#event-box>.summary').fadeIn();
+    $('#event-box>.title').fadeIn(200);
+    $('#event-box>.summary').fadeIn(200);
+    $('#event-box>.date').fadeIn(200);
   } else {
     $('#event-box>.date').text(moment(d.date).format('MMM DD, YYYY'));
 
-    $('.dot').removeClass('active');
     $('svg .vertical-line')
       .addClass('active')
       .removeClass('active-event');
     $('#event-box>.title').hide();
     $('#event-box>.summary').hide();
+    //$('#event-box>.title').fadeOut(100);
+    //$('#event-box>.summary').fadeOut(100);
   }
 };
-
+const hideLine = (hideDate) =>{
+  
+  canvas.selectAll('.vertical-line-text').remove();
+  canvas.select('.vertical-line')
+    .attr('opacity', '0');
+  if(hideDate){
+    $('.dot').removeClass('active');
+    $('#event-box>.date').hide();
+    $('#event-box>.title').hide();
+    $('#event-box>.summary').hide();
+  }
+}
 const initiateCanvas = () => {
   svg = d3.select('#chart-container>svg');
   svg.selectAll('*').remove();
@@ -257,19 +318,13 @@ const initiateCanvas = () => {
     .classed('line', true)
     .attr('d', createLine)
     .attr('clip-path', 'url(#clip)');
+  canvas
+    .append('path')
+    .datum(tickerData.btc)
+    .classed('line2', true)
+    .attr('d', createLine)
+    .attr('clip-path', 'url(#clip)');
 
-  canvas.append('g')
-    .selectAll('dot')
-    .data(eventData)
-    .enter()
-    .append('a')
-    .attr('xlink:href', d => d.Link)
-    .append('circle')
-    .attr('id', d => d.id)
-    .attr('class', 'dot')
-    .attr('r', 5)
-    .attr('cx', d => xScale(new Date(d.date)))
-    .attr('cy', height + timelineTop + dotRadius);
 
   canvas.append('line')
     .attr('x1', 0)
@@ -284,7 +339,12 @@ const initiateCanvas = () => {
     .attr('x2', width)
     .attr('y2', height + timelineTop + timelineHeight)
     .classed('timeline', true);
-
+    
+  canvas.append('line')
+    .classed('vertical-line', true)
+    .attr('width', '1')
+    .attr('opacity', '0');
+  
   canvas.append('g')
     .attr(
       'transform',
@@ -295,8 +355,28 @@ const initiateCanvas = () => {
     .text('Price (USD)');
     
     
+  canvas.append('g')
+    .selectAll('dot')
+    .data(eventData)
+    .enter()
+    .append('a')
+    .attr('xlink:href', d => d.Link)
+    .append('circle')
+    .attr('id', d => d.id)
+    .attr('class', 'dot')
+    .attr('r', 5)
+    .attr('cx', d => xScale(new Date(d.date)))
+    .attr('cy', height + timelineTop + dotRadius);
     
-  
+  canvas.append('line')
+    .attr('x1', -100)
+    .attr('y1', height + timelineTop + dotRadius)
+    .attr('x2', 0)
+    .attr('y2', height + timelineTop + dotRadius)
+    .attr('width', 5)
+    .style('stroke-width', 25)
+    .style('stroke',"#FFF");
+    
   zoom = d3.zoom().on('zoom', () => zoomed(gX, gY, eventData));
   zoom = d3.zoom().scaleExtent([1, 9]);
 
@@ -320,6 +400,26 @@ const initiateCanvas = () => {
         }
     });    
 
+  canvas.selectAll('path.line2').on('mouseover',
+    ()=>{
+      canvas.selectAll('path.line2')
+        .style('opacity','0.1');
+      canvas.selectAll('path.line')
+        .style('stroke-width','2');
+      openFloatbox();
+    }
+  );
+  canvas.selectAll('path.line2').on('mouseout',
+    ()=>{
+      canvas.selectAll('path.line2')
+        .style('opacity','0');
+      canvas.selectAll('path.line')
+        .style('stroke-width','1');
+      closeFloatbox();
+    }
+  );
+  canvas.selectAll('path.line2').on('mousemove',updateFloatbox);
+  //canvas.selectAll('path.line2').on('click',clicked);
   svg.on('mousemove', mousemove);
   svg.call(zoom);
   drawGridLines();
